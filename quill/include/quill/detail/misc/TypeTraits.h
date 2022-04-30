@@ -5,14 +5,12 @@
 
 #pragma once
 
+#include "quill/Fmt.h"
 #include "quill/detail/misc/Attributes.h"
 #include "quill/detail/misc/StringView.h"
 #include "quill/detail/misc/TypeTraitsCopyable.h"
-#include "quill/detail/misc/TypeTraitsSerializable.h"
 
-namespace quill
-{
-namespace detail
+namespace quill::detail
 {
 /**
  * We use promoted to convert all char const* or char* to a std::string when the Logger is creating a LogRecord
@@ -135,4 +133,3 @@ struct is_all_copy_constructible : conjunction<is_all_copy_constructible_helper<
 };
 
 } // namespace detail
-} // namespace quill

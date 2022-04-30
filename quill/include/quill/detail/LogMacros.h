@@ -30,21 +30,19 @@
 // Main Log Macros
 
 #if defined(QUILL_NOFN_MACROS)
-  // clang-format off
+// clang-format off
 #define QUILL_LOGGER_CALL_NOFN(likelyhood, logger, log_statement_level, fmt, ...)                  \
   do {                                                                                             \
     struct {                                                                                       \
-      constexpr quill::LogMacroMetadata operator()() const noexcept {                     \
-        return quill::LogMacroMetadata{QUILL_STRINGIFY(__LINE__), __FILE__,               \
-                                                "n/a", fmt, log_statement_level}; }                \
+      constexpr quill::LogMacroMetadata operator()() const noexcept {                              \
+        return quill::LogMacroMetadata{QUILL_STRINGIFY(__LINE__), __FILE__,                        \
+                                                "n/a", fmt, log_statement_level,                   \
+                                                   quill::LogMacroMetadata::Event::Log}; }         \
       } anonymous_log_record_info;                                                                 \
                                                                                                    \
     if (likelyhood(logger->template should_log<log_statement_level>()))                            \
     {                                                                                              \
-      constexpr bool try_fast_queue {true}; /* Available in dual queue mode only */                \
-      constexpr bool is_backtrace_log_record {false};                                              \
-      logger->template log<try_fast_queue, is_backtrace_log_record,                                \
-                           decltype(anonymous_log_record_info)>                                    \
+      logger->template log<decltype(anonymous_log_record_info)>                                    \
                                                              (FMT_STRING(fmt),  ##__VA_ARGS__);    \
     }                                                                                              \
   } while (0)
@@ -58,15 +56,13 @@
     struct {                                                                                       \
       constexpr quill::LogMacroMetadata operator()() const noexcept {                              \
         return quill::LogMacroMetadata{QUILL_STRINGIFY(__LINE__), __FILE__,                        \
-                                                function_name, fmt, log_statement_level}; }        \
+                                                function_name, fmt, log_statement_level,           \
+                                                    quill::LogMacroMetadata::Event::Log}; }        \
       } anonymous_log_record_info;                                                                 \
                                                                                                    \
     if (likelyhood(logger->template should_log<log_statement_level>()))                            \
     {                                                                                              \
-      constexpr bool try_fast_queue {true}; /* Available in dual queue mode only */                \
-      constexpr bool is_backtrace_log_record {false};                                              \
-      logger->template log<try_fast_queue, is_backtrace_log_record,                                \
-                           decltype(anonymous_log_record_info)>                                    \
+      logger->template log<decltype(anonymous_log_record_info)>                                    \
                                                              (FMT_STRING(fmt),  ##__VA_ARGS__);    \
     }                                                                                              \
   } while (0)
@@ -77,15 +73,13 @@
     struct {                                                                                       \
       constexpr quill::LogMacroMetadata operator()() const noexcept {                              \
         return quill::LogMacroMetadata{QUILL_STRINGIFY(__LINE__), __FILE__,                        \
-                                                function_name, fmt, quill::LogLevel::Backtrace}; } \
+                                                function_name, fmt, quill::LogLevel::Backtrace,    \
+                                                           quill::LogMacroMetadata::Event::Log}; } \
       } anonymous_log_record_info;                                                                 \
                                                                                                    \
     if (QUILL_LIKELY(logger->template should_log<quill::LogLevel::Backtrace>()))                   \
     {                                                                                              \
-      constexpr bool try_fast_queue {true}; /* Available in dual queue mode only */                \
-      constexpr bool is_backtrace_log_record {true};                                               \
-      logger->template log<try_fast_queue, is_backtrace_log_record,                                \
-                           decltype(anonymous_log_record_info)>                                    \
+      logger->template log<decltype(anonymous_log_record_info)>                                    \
                                                              (FMT_STRING(fmt),  ##__VA_ARGS__);    \
     }                                                                                              \
   } while (0)

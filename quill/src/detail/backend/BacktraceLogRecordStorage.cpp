@@ -1,27 +1,17 @@
 #include "quill/detail/backend/BacktraceLogRecordStorage.h"
 #include "quill/QuillError.h" // for QUILL_THROW, Quil...
-#include "quill/detail/events//BaseEvent.h"
 #include "quill/detail/misc/Macros.h"
+#include "quill/detail/misc/Os.h"
 
 namespace quill
 {
 namespace detail
 {
-/***/
-BacktraceLogRecordStorage::BacktraceLogRecordStorage()
-{
-  // Initialise memory for our free list allocator
-  _free_list_allocator.reserve(4 * get_page_size());
-
-  // Also configure our allocator to request bigger chunks from os
-  _free_list_allocator.set_minimum_allocation(get_page_size());
-}
 
 /***/
-void BacktraceLogRecordStorage::store(std::string const& logger_name, std::string thread_id,
-                                      std::string thread_name, BaseEvent const* record)
+void BacktraceLogRecordStorage::store(TransitEvent transit_event)
 {
-  auto stored_records_it = _stored_records_map.find(logger_name);
+  auto stored_records_it = _stored_records_map.find(transit_event.header.logger_details->name());
 
   if (QUILL_UNLIKELY(stored_records_it == _stored_records_map.end()))
   {
@@ -36,14 +26,12 @@ void BacktraceLogRecordStorage::store(std::string const& logger_name, std::strin
   if (stored_object_info.stored_records_collection.size() < stored_object_info.capacity)
   {
     // We are still growing the vector to max capacity
-    stored_object_info.stored_records_collection.emplace_back(
-      std::move(thread_id), std::move(thread_name), record->clone(_free_list_allocator));
+    stored_object_info.stored_records_collection.emplace_back(std::move(transit_event));
   }
   else
   {
     // Store the object in the vector
-    stored_object_info.stored_records_collection[stored_object_info.index] = BacktraceLogRecord{
-      std::move(thread_id), std::move(thread_name), record->clone(_free_list_allocator)};
+    stored_object_info.stored_records_collection[stored_object_info.index] = transit_event;
 
     // Update the index wrapping around the vector capacity
     if (stored_object_info.index < stored_object_info.capacity - 1)
@@ -60,7 +48,7 @@ void BacktraceLogRecordStorage::store(std::string const& logger_name, std::strin
 /***/
 void BacktraceLogRecordStorage::process(
   std::string const& logger_name,
-  std::function<void(std::string const&, std::string const&, BaseEvent const*)> const& callback)
+  std::function<void(std::string const&, std::string const&, TransitEvent const&)> const& callback)
 {
   auto stored_records_it = _stored_records_map.find(logger_name);
 
@@ -70,6 +58,7 @@ void BacktraceLogRecordStorage::process(
     return;
   }
 
+  // TODO:: fix backtrace v2
   // we found stored messages for this logger
   uint32_t index = stored_records_it->second.index;
   StoredRecordsCollection& stored_record_collection = stored_records_it->second.stored_records_collection;
@@ -77,8 +66,8 @@ void BacktraceLogRecordStorage::process(
   for (uint32_t i = 0; i < stored_record_collection.size(); ++i)
   {
     // Give to the user callback the thread id and the RecordBase pointer
-    callback(stored_record_collection[index].thread_id, stored_record_collection[index].thread_name,
-             stored_record_collection[index].base_record.get());
+    callback(stored_record_collection[index].thread_context->thread_id(),
+             stored_record_collection[index].thread_context->thread_name(), stored_record_collection[index]);
 
     // We wrap around to iterate all messages
     if (index < stored_record_collection.size() - 1)
@@ -92,7 +81,7 @@ void BacktraceLogRecordStorage::process(
   }
 
   // finally clean all messages
-  stored_record_collection.clear();
+  // stored_record_collection.clear();
 }
 
 /***/

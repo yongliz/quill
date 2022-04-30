@@ -17,11 +17,6 @@ set(HEADER_FILES
         include/quill/detail/backend/StringFromTime.h
         include/quill/detail/backend/TimestampFormatter.h
 
-        include/quill/detail/events/BacktraceEvent.h
-        include/quill/detail/events/BaseEvent.h
-        include/quill/detail/events/FlushEvent.h
-        include/quill/detail/events/LogEvent.h
-
         include/quill/detail/misc/AlignedAllocator.h
         include/quill/detail/misc/Attributes.h
         include/quill/detail/misc/Common.h
@@ -35,17 +30,10 @@ set(HEADER_FILES
         include/quill/detail/misc/StringView.h
         include/quill/detail/misc/TypeTraits.h
         include/quill/detail/misc/TypeTraitsCopyable.h
-        include/quill/detail/misc/TypeTraitsSerializable.h
         include/quill/detail/misc/Utilities.h
 
-        include/quill/detail/serialize/Deserialize.h
-        include/quill/detail/serialize/Serialize.h
-        include/quill/detail/serialize/SerializationMetadata.h
-        include/quill/detail/serialize/TypeDescriptor.h
-
-        include/quill/detail/spsc_queue/BoundedSPSCEventQueue.h
-        include/quill/detail/spsc_queue/BoundedSPSCRawQueue.h
-        include/quill/detail/spsc_queue/UnboundedSPSCEventQueue.h
+        include/quill/detail/spsc_queue/BoundedQueue.h
+        include/quill/detail/spsc_queue/UnboundedQueue.h
 
         include/quill/detail/Config.h
         include/quill/detail/HandlerCollection.h
@@ -90,7 +78,6 @@ set(SOURCE_FILES
         src/detail/misc/Spinlock.cpp
         src/detail/misc/Utilities.cpp
         src/detail/Config.cpp
-        src/detail/Deserialize.cpp
         src/detail/HandlerCollection.cpp
         src/detail/LoggerCollection.cpp
         src/detail/LogManagerSingleton.cpp
@@ -187,7 +174,7 @@ target_include_directories(${TARGET_NAME}
 # Compiler options
 target_compile_options(${TARGET_NAME} PRIVATE
         $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
-        -Wall -Wextra -Wconversion -pedantic -Wfatal-errors -Wno-unused-private-field -Wno-gnu-zero-variadic-macro-arguments>
+        -Wall -Wextra -Wconversion -pedantic -Wfatal-errors -Wno-unused-private-field -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-parameter>
         $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4324 /wd4189>)
 
 # TODO:: use MultiByteToWideChar() and WideCharToMultiByte() from <Windows.h> instead of covecvt

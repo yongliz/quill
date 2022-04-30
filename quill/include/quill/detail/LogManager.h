@@ -13,7 +13,6 @@
 #include "quill/detail/SignalHandler.h" // for init_signal_handler
 #include "quill/detail/ThreadContextCollection.h"
 #include "quill/detail/backend/BackendWorker.h"
-#include "quill/detail/events/FlushEvent.h"
 #include "quill/detail/misc/Spinlock.h"
 #include <mutex> // for call_once, once_flag
 
@@ -95,26 +94,32 @@ public:
     // Create an atomic variable
     std::atomic<bool> backend_thread_flushed{false};
 
-    // notify will be invoked done the backend thread when this message is processed
-    auto notify_callback = [&backend_thread_flushed]()
+    // we need to write an event to the queue passing this atomic variable
+    struct
     {
-      // When the backend thread is done flushing it will set the flag to true
-      backend_thread_flushed.store(true);
-    };
+      constexpr quill::LogMacroMetadata operator()() const noexcept
+      {
+        return quill::LogMacroMetadata{
+          QUILL_STRINGIFY(__LINE__), __FILE__, __FUNCTION__, "", LogLevel::Critical, quill::LogMacroMetadata::Event::Flush};
+      }
+    } anonymous_log_record_info;
 
-    using event_t = detail::FlushEvent;
+    detail::ThreadContext* const thread_context = _thread_context_collection.local_thread_context();
+    uint32_t total_size = sizeof(detail::Header) + sizeof(std::atomic<bool>*);
 
-#if defined(QUILL_USE_BOUNDED_QUEUE)
-    // emplace to the spsc queue owned by the ctx, we never drop the flush message
-    bool emplaced{false};
-    do
-    {
-      emplaced =
-        _thread_context_collection.local_thread_context()->event_spsc_queue().try_emplace<event_t>(notify_callback);
-    } while (!emplaced);
-#else
-    _thread_context_collection.local_thread_context()->event_spsc_queue().emplace<event_t>(notify_callback);
-#endif
+    // request this size from the queue
+    std::byte* write_buffer = thread_context->spsc_queue().prepare_write(total_size);
+    std::byte* const write_begin = write_buffer;
+
+    write_buffer = detail::align_pointer<alignof(detail::Header), std::byte>(write_buffer);
+
+    new (write_buffer) detail::Header(get_metadata_ptr<decltype(anonymous_log_record_info)>, nullptr);
+    write_buffer += sizeof(detail::Header);
+
+    // encode the pointer to atomic bool
+    std::memcpy(write_buffer, std::addressof(backend_thread_flushed),
+                static_cast<size_t>(sizeof(std::atomic<bool>*)));
+    thread_context->spsc_queue().commit_write(write_buffer - write_begin);
 
     // The caller thread keeps checking the flag until the backend thread flushes
     do

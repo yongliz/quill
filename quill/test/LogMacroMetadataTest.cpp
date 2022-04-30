@@ -12,8 +12,9 @@ using namespace quill;
 TEST_CASE("construct")
 {
   {
-    constexpr LogMacroMetadata log_line_info{QUILL_STRINGIFY(__LINE__), __FILE__, __FUNCTION__,
-                                             "Test fmt {}", quill::LogLevel::Debug};
+    constexpr LogMacroMetadata log_line_info{
+      QUILL_STRINGIFY(__LINE__),   __FILE__, __FUNCTION__, "Test fmt {}", quill::LogLevel::Debug,
+      LogMacroMetadata::Event::Log};
 
     REQUIRE_STREQ(log_line_info.message_format(), "Test fmt {}");
     REQUIRE_EQ(log_line_info.level(), quill::LogLevel::Debug);
@@ -21,8 +22,12 @@ TEST_CASE("construct")
   }
 
   {
-    constexpr LogMacroMetadata log_line_info{QUILL_STRINGIFY(__LINE__), __FILE__, __FUNCTION__,
-                                             "Test another fmt {}", quill::LogLevel::Info};
+    constexpr LogMacroMetadata log_line_info{QUILL_STRINGIFY(__LINE__),
+                                             __FILE__,
+                                             __FUNCTION__,
+                                             "Test another fmt {}",
+                                             quill::LogLevel::Info,
+                                             LogMacroMetadata::Event::Log};
 
     REQUIRE_STREQ(log_line_info.message_format(), "Test another fmt {}");
     REQUIRE_EQ(log_line_info.level(), quill::LogLevel::Info);
@@ -37,8 +42,12 @@ TEST_CASE("construct")
 
 #if defined(_WIN32)
   {
-    constexpr LogMacroMetadata log_line_info{QUILL_STRINGIFY(__LINE__), __FILE__, __FUNCTION__,
-                                             L"Test wide fmt {}", quill::LogLevel::Info};
+    constexpr LogMacroMetadata log_line_info{QUILL_STRINGIFY(__LINE__),
+                                             __FILE__,
+                                             __FUNCTION__,
+                                             L"Test wide fmt {}",
+                                             quill::LogLevel::Info,
+                                             LogMacroMetadata::Event::Log};
 
     REQUIRE((wcscmp(log_line_info.wmessage_format(), L"Test wide fmt {}") == 0));
     REQUIRE_EQ(log_line_info.level(), quill::LogLevel::Info);
