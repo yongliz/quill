@@ -321,8 +321,10 @@ void BackendWorker::_read_queue_and_decode(ThreadContext* thread_context, bool i
     }
     else
     {
-      std::memcpy(&flush_flag, read_buffer, sizeof(std::atomic<bool>*));
-      read_buffer += sizeof(std::atomic<bool>*);
+      uintptr_t flush_flag_tmp;
+      std::memcpy(&flush_flag_tmp, read_buffer, sizeof(uintptr_t));
+      flush_flag = reinterpret_cast<std::atomic<bool>*>(flush_flag_tmp);
+      read_buffer += sizeof(uintptr_t);
     }
 
     // Finish reading

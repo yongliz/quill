@@ -105,7 +105,7 @@ public:
     } anonymous_log_record_info;
 
     detail::ThreadContext* const thread_context = _thread_context_collection.local_thread_context();
-    uint32_t total_size = sizeof(detail::Header) + sizeof(std::atomic<bool>*);
+    uint32_t total_size = sizeof(detail::Header) + sizeof(uintptr_t);
 
     // request this size from the queue
     std::byte* write_buffer = thread_context->spsc_queue().prepare_write(total_size);
@@ -117,8 +117,10 @@ public:
     write_buffer += sizeof(detail::Header);
 
     // encode the pointer to atomic bool
-    std::memcpy(write_buffer, std::addressof(backend_thread_flushed),
-                static_cast<size_t>(sizeof(std::atomic<bool>*)));
+    std::atomic<bool>* flush_ptr = std::addressof(backend_thread_flushed);
+    std::memcpy(write_buffer, &flush_ptr, sizeof(uintptr_t));
+    write_buffer += sizeof(uintptr_t);
+
     thread_context->spsc_queue().commit_write(write_buffer - write_begin);
 
     // The caller thread keeps checking the flag until the backend thread flushes
