@@ -18,7 +18,7 @@ TEST_CASE("construct")
 
     REQUIRE_STREQ(log_line_info.message_format(), "Test fmt {}");
     REQUIRE_EQ(log_line_info.level(), quill::LogLevel::Debug);
-    REQUIRE_STREQ(log_line_info.lineno(), "15");
+    REQUIRE_STREQ(log_line_info.lineno(), "16");
   }
 
   {
@@ -31,7 +31,7 @@ TEST_CASE("construct")
 
     REQUIRE_STREQ(log_line_info.message_format(), "Test another fmt {}");
     REQUIRE_EQ(log_line_info.level(), quill::LogLevel::Info);
-    REQUIRE_STREQ(log_line_info.lineno(), "24");
+    REQUIRE_STREQ(log_line_info.lineno(), "25");
     REQUIRE_STREQ(log_line_info.filename(), "LogMacroMetadataTest.cpp");
     REQUIRE_STREQ(log_line_info.level_as_str(), "INFO     ");
 
@@ -51,7 +51,7 @@ TEST_CASE("construct")
 
     REQUIRE((wcscmp(log_line_info.wmessage_format(), L"Test wide fmt {}") == 0));
     REQUIRE_EQ(log_line_info.level(), quill::LogLevel::Info);
-    REQUIRE_STREQ(log_line_info.lineno(), "40");
+    REQUIRE_STREQ(log_line_info.lineno(), "45");
     REQUIRE_STREQ(log_line_info.filename(), "LogMacroMetadataTest.cpp");
     REQUIRE_STREQ(log_line_info.level_as_str(), "INFO     ");
     REQUIRE_EQ(log_line_info.has_wide_char(), true);

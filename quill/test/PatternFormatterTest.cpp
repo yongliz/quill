@@ -34,7 +34,7 @@ TEST_CASE("default_pattern_formatter")
 
   // Default pattern formatter is using local time to convert the timestamp to timezone, in this test we ignore the timestamp
   std::string const expected_string =
-    "[31341] PatternFormatterTest.cpp:21  LOG_INFO      test_logger  - This the pattern formatter "
+    "[31341] PatternFormatterTest.cpp:22  LOG_INFO      test_logger  - This the pattern formatter "
     "1234\n";
   auto const found_expected = formatted_string.find(expected_string);
   REQUIRE(found_expected != std::string::npos);
@@ -330,7 +330,7 @@ TEST_CASE("custom_pattern")
   std::string const formatted_string = fmt::to_string(formatted_buffer);
 
   std::string const expected_string =
-    "01-23-2020 21:42:41.000023000 [31341] PatternFormatterTest.cpp:302 LOG_DEBUG     test_logger "
+    "01-23-2020 21:42:41.000023000 [31341] PatternFormatterTest.cpp:319 LOG_DEBUG     test_logger "
     "- This the 1234 formatter pattern\n";
 
   REQUIRE_EQ(formatted_buffer.size(), expected_string.length());
