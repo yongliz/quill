@@ -1,4 +1,4 @@
-#include "quill/detail/backend/BacktraceLogRecordStorage.h"
+#include "quill/detail/backend/BacktraceStorage.h"
 #include "quill/QuillError.h" // for QUILL_THROW, Quil...
 #include "quill/detail/misc/Macros.h"
 #include "quill/detail/misc/Os.h"
@@ -9,7 +9,7 @@ namespace detail
 {
 
 /***/
-void BacktraceLogRecordStorage::store(TransitEvent transit_event)
+void BacktraceStorage::store(TransitEvent transit_event)
 {
   auto stored_records_it = _stored_records_map.find(transit_event.header.logger_details->name());
 
@@ -46,9 +46,8 @@ void BacktraceLogRecordStorage::store(TransitEvent transit_event)
 }
 
 /***/
-void BacktraceLogRecordStorage::process(
-  std::string const& logger_name,
-  std::function<void(std::string const&, std::string const&, TransitEvent const&)> const& callback)
+void BacktraceStorage::process(std::string const& logger_name,
+                               std::function<void(std::string const&, std::string const&, TransitEvent const&)> const& callback)
 {
   auto stored_records_it = _stored_records_map.find(logger_name);
 
@@ -85,7 +84,7 @@ void BacktraceLogRecordStorage::process(
 }
 
 /***/
-void BacktraceLogRecordStorage::set_capacity(std::string const& logger_name, uint32_t capacity)
+void BacktraceStorage::set_capacity(std::string const& logger_name, uint32_t capacity)
 {
   auto inserted_it =
     _stored_records_map.insert(std::make_pair(std::string{logger_name}, StoredRecordInfo{capacity}));
@@ -106,7 +105,7 @@ void BacktraceLogRecordStorage::set_capacity(std::string const& logger_name, uin
 }
 
 /***/
-void BacktraceLogRecordStorage::clear(std::string const& logger_name)
+void BacktraceStorage::clear(std::string const& logger_name)
 {
   auto stored_records_it = _stored_records_map.find(logger_name);
 

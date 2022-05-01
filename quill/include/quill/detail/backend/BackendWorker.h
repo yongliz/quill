@@ -14,8 +14,7 @@
 #include "quill/detail/LoggerDetails.h"
 #include "quill/detail/ThreadContext.h"                     // for ThreadContext, Thr...
 #include "quill/detail/ThreadContextCollection.h"           // for ThreadContextColle...
-#include "quill/detail/backend/BacktraceLogRecordStorage.h" // for BacktraceLogRecordStorage
-#include "quill/detail/backend/FreeListAllocator.h"         // for FreeListAllocator..
+#include "quill/detail/backend/BacktraceStorage.h"          // for BacktraceStorage
 #include "quill/detail/misc/Attributes.h"                   // for QUILL_ATTRIBUTE_HOT
 #include "quill/detail/misc/Common.h"                       // for QUILL_RDTSC_RESYNC...
 #include "quill/detail/misc/Macros.h"                       // for QUILL_LIKELY
@@ -162,9 +161,7 @@ private:
   std::atomic<bool> _is_running{false}; /** The spawned backend thread status */
   std::priority_queue<TransitEvent, std::vector<TransitEvent>, std::greater<>> _transit_events;
 
-  BacktraceLogRecordStorage _backtrace_log_record_storage; /** Stores a vector of backtrace log records per logger name */
-
-  FreeListAllocator _free_list_allocator; /** A free list allocator with initial capacity, we store the TransitEvents that we pop from each SPSC queue here */
+  BacktraceStorage _backtrace_log_record_storage; /** Stores a vector of backtrace log records per logger name */
 
 #if !defined(QUILL_NO_EXCEPTIONS)
   backend_worker_error_handler_t _error_handler; /** error handler for the backend thread */
@@ -214,13 +211,6 @@ void BackendWorker::run()
 
       // Cache this thread's id
       _backend_worker_thread_id = get_thread_id();
-
-      // Initialise memory for our free list allocator. We reserve the same size as a full
-      // size of 1 caller thread queue
-      _free_list_allocator.reserve(QUILL_QUEUE_CAPACITY);
-
-      // Also configure our allocator to request bigger chunks from os
-      _free_list_allocator.set_minimum_allocation(QUILL_QUEUE_CAPACITY);
 
       // All okay, set the backend worker thread running flag
       _is_running.store(true, std::memory_order_seq_cst);

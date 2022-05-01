@@ -180,64 +180,6 @@
 // #define QUILL_USE_BOUNDED_QUEUE
 
 /**
- * When this is enabled Quill will use 2 SPSC queues for each thread
- * 1) The first queue is the main queue called event queue. In this queue there are events pushed
- * from the caller threads to the backend worker thread. Example the flush event, log events etc..
- * The log events are pushed after all log statement arguments are converted to a tuple inside an
- * event. A log event can contain arguments of any type e.g. vectors, maps or user defined types.
- * The events of this queue are read by the backend worker thread via the help of virtual methods.
- * This queue is required for quill to worke and it is NOT possible to disable it.
- *
- * 2) The second queue is a fast raw spsc queue where only fundamental types are pused. In this queue
- * the arguments are inserted using memcpy() and it is faster than the first queue by a few nanoseconds
- * on the caller threads - on my system this ranges from around 2 to 10 nanoseconds on the caller thread.
- *
- * This queue also avoids the overhead of `new` when short string optimization is not enabled or
- * not supported. For example if we wanted to copy a std::string or a long char const* to the first
- * queue (event queue) it would be copied as std::tuple<std::string> which could result in
- * calling std::string's constructor for and operator `new` large strings.
- * Inserting the same string to this fast raw spsc queue we just do a memcpy of the string contents
- * to the queue resulting to no extra allocations.
- *
- * How the fast queue works :
- * When we push to the fast queue we store only the argument value and NOT their types.
- * In order to retrieve the types for deserialization we construct a SerializationMetadata string
- * DURING program initialization time. The SerializationMetadata have static lifetime.
- * To the fast queue we only push a pointer to this pre-constructed SerializationMetadata
- *
- * As a result using DUAL_QUEUE will result in doing some small initial calculations every time
- * the program starts.
- *
- * Each log statement is pushed either to the first OR to the second queue.
- *
- * When dual queue mode is disabled everything is pushed into the first queue.
- *
- * When dual queue mode is enabled any log statements that have all their arguments satisfying
- * the below criteria will get pushed to the second queue resulting in better performance and less allocations
- * a) fundamental types
- * b) enums
- * c) std::string and char arrays
- *
- * E.g.
- * LOG_INFO(logger, "{} {} {}", 1, 2.5, "test"); --> This is pushed to the second (raw) queue because ALL arguments satisfy the above criteria
- * LOG_INFO(logger, "{} {} {}", 1, "test", std::array<int,3>{1,2,3}); -> This is pushed to the first queue (EVENT) as it contains a complex type
- *
- * NOTE:
- * 1) Using dual queue mode with unbounded queue is the recommended option.
- *  The difference of bounded and unbounded queues is very small in latency and the unbounded queue is
- *  safer as no log messages will get dropped.
- *
- * 2) Using dual queue mode + QUILL_USE_BOUNDED_QUEUE will give the fastest performance possible.
- * Logging only fundamental types or strings (like a printf only API) in the hot path is also recommended if you care about every nanosecond of latency.
- *
- * 3) Disable dual queue mode if
- * a) Don't care about around 2-10 extra nanoseconds of latency when logging just fundamental types
- * b) Mostly logging complex types, user defined types etc
- * c) A few extra ms during program initialization time are important
- */
-// #define QUILL_DISABLE_DUAL_QUEUE_MODE
-
-/**
  * Quill uses a unbounded SPSC queue per spawned thread to forward the LogRecords to the backend thread.
  *
  * During very high logging activity the backend thread won't be able to consume fast enough
@@ -256,4 +198,4 @@
  * of the page size (4096).
  * Look for an online Mebibyte to Byte converted to easily find a correct value.
  */
-// #define QUILL_QUEUE_CAPACITY 262'144
+#define QUILL_QUEUE_CAPACITY 262'144

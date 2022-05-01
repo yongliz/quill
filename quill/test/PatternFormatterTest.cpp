@@ -96,8 +96,8 @@ TEST_CASE("custom_pattern_timestamp_precision_nanoseconds")
   std::string const formatted_string = fmt::to_string(formatted_buffer);
 
   std::string const expected_string =
-    "01-23-2020 21:42:41.000023000 [31341] PatternFormatterTest.cpp:80 LOG_DEBUG     test_logger - "
-    "This the 1234 formatter pattern [_DOCTEST_ANON_FUNC_8]\n";
+    "01-23-2020 21:42:41.000023000 [31341] PatternFormatterTest.cpp:85 LOG_DEBUG     test_logger - "
+    "This the 1234 formatter pattern [DOCTEST_ANON_FUNC_7]\n";
 
   REQUIRE_EQ(formatted_buffer.size(), expected_string.length());
   REQUIRE_EQ(formatted_string, expected_string);
@@ -129,8 +129,8 @@ TEST_CASE("custom_pattern_timestamp_precision_microseconds")
   std::string const formatted_string = fmt::to_string(formatted_buffer);
 
   std::string const expected_string =
-    "01-23-2020 21:42:41.020123 [31341] PatternFormatterTest.cpp:111 LOG_DEBUG     test_logger - "
-    "This the 1234 formatter pattern [_DOCTEST_ANON_FUNC_10]\n";
+    "01-23-2020 21:42:41.020123 [31341] PatternFormatterTest.cpp:118 LOG_DEBUG     test_logger - "
+    "This the 1234 formatter pattern [DOCTEST_ANON_FUNC_9]\n";
 
   REQUIRE_EQ(formatted_buffer.size(), expected_string.length());
   REQUIRE_EQ(formatted_string, expected_string);
@@ -162,8 +162,8 @@ TEST_CASE("custom_pattern_timestamp_precision_milliseconds")
   std::string const formatted_string = fmt::to_string(formatted_buffer);
 
   std::string const expected_string =
-    "01-23-2020 21:42:41.099 [31341] PatternFormatterTest.cpp:142 LOG_DEBUG     test_logger - This "
-    "the 1234 formatter pattern [_DOCTEST_ANON_FUNC_12]\n";
+    "01-23-2020 21:42:41.099 [31341] PatternFormatterTest.cpp:151 LOG_DEBUG     test_logger - This "
+    "the 1234 formatter pattern [DOCTEST_ANON_FUNC_11]\n";
 
   REQUIRE_EQ(formatted_buffer.size(), expected_string.length());
   REQUIRE_EQ(formatted_string, expected_string);
@@ -195,8 +195,8 @@ TEST_CASE("custom_pattern_timestamp_precision_none")
   std::string const formatted_string = fmt::to_string(formatted_buffer);
 
   std::string const expected_string =
-    "01-23-2020 21:42:41 [31341] PatternFormatterTest.cpp:173 LOG_DEBUG     test_logger - This the "
-    "1234 formatter pattern [_DOCTEST_ANON_FUNC_14]\n";
+    "01-23-2020 21:42:41 [31341] PatternFormatterTest.cpp:184 LOG_DEBUG     test_logger - This the "
+    "1234 formatter pattern [DOCTEST_ANON_FUNC_13]\n";
 
   REQUIRE_EQ(formatted_buffer.size(), expected_string.length());
   REQUIRE_EQ(formatted_string, expected_string);
@@ -230,8 +230,8 @@ TEST_CASE("custom_pattern_timestamp_strftime_reallocation_on_format_string_2")
     std::string const formatted_string = fmt::to_string(formatted_buffer);
 
     std::string const expected_string =
-      "2020-01-23T21:42:41.0992202020-01-23T21:42:41 [31341] PatternFormatterTest.cpp:205 "
-      "LOG_DEBUG     test_logger - This the 1234 formatter pattern [_DOCTEST_ANON_FUNC_16]\n";
+      "2020-01-23T21:42:41.0992202020-01-23T21:42:41 [31341] PatternFormatterTest.cpp:218 "
+      "LOG_DEBUG     test_logger - This the 1234 formatter pattern [DOCTEST_ANON_FUNC_15]\n";
 
     REQUIRE_EQ(formatted_buffer.size(), expected_string.length());
     REQUIRE_EQ(formatted_string, expected_string);
@@ -266,8 +266,8 @@ TEST_CASE("custom_pattern_timestamp_strftime_reallocation_when_adding_fractional
     std::string const formatted_string = fmt::to_string(formatted_buffer);
 
     std::string const expected_string =
-      "2020-01-23T21:42:41.21:42:41.0992202020-01-23T21:42:41 [31341] PatternFormatterTest.cpp:239 "
-      "LOG_DEBUG     test_logger - This the 1234 formatter pattern [_DOCTEST_ANON_FUNC_18]\n";
+      "2020-01-23T21:42:41.21:42:41.0992202020-01-23T21:42:41 [31341] PatternFormatterTest.cpp:254 "
+      "LOG_DEBUG     test_logger - This the 1234 formatter pattern [DOCTEST_ANON_FUNC_17]\n";
 
     REQUIRE_EQ(formatted_buffer.size(), expected_string.length());
     REQUIRE_EQ(formatted_string, expected_string);

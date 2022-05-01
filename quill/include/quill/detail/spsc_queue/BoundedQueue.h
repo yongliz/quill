@@ -42,7 +42,7 @@ public:
    * Attempt to reserve contiguous space for the producer without
    * making it visible to the consumer.
    */
-  [[nodiscard]] [[gnu::always_inline]] [[gnu::hot]] std::byte* prepare_write(size_t nbytes) noexcept
+  QUILL_NODISCARD_ALWAYS_INLINE_HOT std::byte* prepare_write(size_t nbytes) noexcept
   {
     // Fast in-line path
     if (_min_free_space > nbytes)
@@ -123,7 +123,7 @@ public:
    * Complement to reserve producer space that makes nbytes starting
    * from the return of reserve producer space visible to the consumer.
    */
-  [[gnu::always_inline]] [[gnu::hot]] void commit_write(size_t nbytes) noexcept
+  QUILL_ALWAYS_INLINE_HOT void commit_write(size_t nbytes) noexcept
   {
     _min_free_space -= nbytes;
     _producer_pos.store(_producer_pos.load(std::memory_order_relaxed) + nbytes, std::memory_order_release);
@@ -133,7 +133,7 @@ public:
    * Prepare to read from the buffer
    * @return a pair of the buffer location to read and the number of available bytes
    */
-  [[nodiscard]] [[gnu::always_inline]] [[gnu::hot]] std::pair<std::byte*, size_t> prepare_read() noexcept
+  QUILL_NODISCARD_ALWAYS_INLINE_HOT std::pair<std::byte*, size_t> prepare_read() noexcept
   {
     // Save a consistent copy of producerPos
     // Prevent reading new producerPos but old endOf...
@@ -169,7 +169,7 @@ public:
    * for the producer to reuse.
    * nbytes must be less or equal than what is returned by prepare_read().
    */
-  [[gnu::always_inline]] [[gnu::hot]] void finish_read(uint64_t nbytes) noexcept
+  QUILL_ALWAYS_INLINE_HOT void finish_read(uint64_t nbytes) noexcept
   {
     _consumer_pos.store(_consumer_pos.load(std::memory_order_relaxed) + nbytes, std::memory_order_release);
   }
@@ -178,17 +178,17 @@ public:
    * Gives a pointer to producer pos
    * @return
    */
-  [[nodiscard]] [[gnu::hot]] std::byte const* producer_pos() const noexcept
+  QUILL_NODISCARD_ALWAYS_INLINE_HOT std::byte const* producer_pos() const noexcept
   {
     return _producer_pos.load(std::memory_order_relaxed);
   }
 
-  [[nodiscard]] bool empty() const noexcept
+  QUILL_NODISCARD bool empty() const noexcept
   {
     return _consumer_pos.load(std::memory_order_relaxed) == _producer_pos.load(std::memory_order_relaxed);
   }
 
-  [[nodiscard]] static constexpr size_t capacity() noexcept { return QUILL_QUEUE_CAPACITY; }
+  QUILL_NODISCARD static constexpr size_t capacity() noexcept { return QUILL_QUEUE_CAPACITY; }
 
 protected:
   std::byte* _storage{nullptr};

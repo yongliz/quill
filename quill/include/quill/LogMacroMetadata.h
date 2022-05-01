@@ -122,28 +122,17 @@ public:
 #endif
 
 private:
-  QUILL_NODISCARD static constexpr char const* _str_end(char const* str) noexcept
+  QUILL_NODISCARD static constexpr char const* _extract_source_file_name(char const* path) noexcept
   {
-    return *str ? _str_end(str + 1) : str;
-  }
-
-  QUILL_NODISCARD static constexpr bool _str_slant(char const* str) noexcept
-  {
-    return *str == path_delimiter ? true : (*str ? _str_slant(str + 1) : false);
-  }
-
-  QUILL_NODISCARD static constexpr char const* _r_slant(char const* const str_begin, char const* str) noexcept
-  {
-    // clang-format off
-    return str != str_begin ? (*str == path_delimiter ? (str + 1)
-                                                      : _r_slant( str_begin, str -1))
-                            : str;
-    // clang-format on
-  }
-
-  QUILL_NODISCARD static constexpr char const* _extract_source_file_name(char const* str) noexcept
-  {
-    return _str_slant(str) ? _r_slant(str, _str_end(str)) : str;
+    const char* file = path;
+    while (*path)
+    {
+      if (*path++ == path_delimiter)
+      {
+        file = path;
+      }
+    }
+    return file;
   }
 
   QUILL_NODISCARD static constexpr char const* _log_level_to_string(LogLevel log_level)
@@ -180,7 +169,6 @@ private:
 #endif
 };
 
-// using Context = ;
 using MemoryBuffer = fmt::basic_memory_buffer<char, 1024>;
 
 namespace detail

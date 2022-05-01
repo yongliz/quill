@@ -8,7 +8,6 @@
 #include "quill/Fmt.h"                               // for memory_buffer
 #include "quill/LogMacroMetadata.h"                  // for LogMacroMetadata
 #include "quill/QuillError.h"                        // for QUILL_THROW, Quil...
-#include "quill/bundled/invoke/invoke.h"             // for apply
 #include "quill/detail/backend/TimestampFormatter.h" // for TimestampFormatter
 #include "quill/detail/misc/Attributes.h"            // for QUILL_NODISCARD
 #include "quill/detail/misc/Common.h"                // for Timezone, Timezon...
@@ -32,18 +31,7 @@
  * A macro to pass a string as a constexpr argument
  * Must be used in order to pass the arguments to the set_pattern function
  */
-#define QUILL_STRING(str)                                                                          \
-  []                                                                                               \
-  {                                                                                                \
-    union X                                                                                        \
-    {                                                                                              \
-      static constexpr auto value()                                                                \
-      {                                                                                            \
-        return str;                                                                                \
-      }                                                                                            \
-    };                                                                                             \
-    return X{};                                                                                    \
-  }()
+#define QUILL_STRING(str) []() { return std::string_view{str}; }
 
 namespace quill
 {
@@ -129,7 +117,7 @@ private:
                        tuple_args(timestamp, thread_id, thread_name, logger_name, logline_info)...);
       };
 
-      invoke_hpp::apply(format_buffer, _tuple_of_callbacks);
+      std::apply(format_buffer, _tuple_of_callbacks);
     }
 
   private:
@@ -328,7 +316,7 @@ private:
    * @return an array with the count of %(..) for part 1 and part 3
    * */
   template <typename TConstantString>
-  QUILL_NODISCARD static constexpr std::array<size_t, 2> _parse_format_pattern();
+  QUILL_NODISCARD static constexpr std::array<size_t, 2> _parse_format_pattern(TConstantString cs);
 
   /**
    * Process part of the pattern and create a helper formatter class
@@ -467,24 +455,25 @@ typename std::enable_if_t<(detail::any_is_same<std::wstring, void, Args...>::val
 
 /***/
 template <typename TConstantString>
-void PatternFormatter::_set_pattern(TConstantString)
+void PatternFormatter::_set_pattern(TConstantString cs)
 {
-  std::string const pattern = TConstantString::value();
+  constexpr std::string_view pattern = cs();
 
   // parse and check the given pattern
-  size_t const message_found = pattern.find("%(message)");
+  constexpr std::string_view message{"%(message)"};
+  size_t const message_found = pattern.find(message);
   if (message_found == std::string::npos)
   {
     QUILL_THROW(QuillError{"%(message) is required in the format pattern"});
   }
 
   // break down the pattern to three parts, we can ignore part_2 which will be '%(message)'
-  std::string const pattern_part_1 = pattern.substr(0, message_found);
-  std::string const pattern_part_3 = pattern.substr(message_found + quill::detail::strlength("%(message)"));
+  std::string const pattern_part_1 = std::string{pattern.substr(0, message_found)};
+  std::string const pattern_part_3 = std::string{pattern.substr(message_found + message.length())};
 
   // calculate the size of the format specifiers '%'
   // pos 0 = number of part_1 args, pos 1 = number of part_3 args
-  constexpr std::array<size_t, 2> arr = _parse_format_pattern<TConstantString>();
+  constexpr std::array<size_t, 2> arr = _parse_format_pattern<TConstantString>(cs);
   constexpr size_t part_1_args_count = arr[0];
   constexpr size_t part_3_args_count = arr[1];
 
@@ -495,10 +484,10 @@ void PatternFormatter::_set_pattern(TConstantString)
 
 /***/
 template <typename TConstantString>
-constexpr std::array<size_t, 2> PatternFormatter::_parse_format_pattern()
+constexpr std::array<size_t, 2> PatternFormatter::_parse_format_pattern(TConstantString cs)
 {
-  constexpr char const* pattern = TConstantString::value();
-  constexpr size_t len = quill::detail::strlength(pattern);
+  constexpr std::string_view pattern = cs();
+  constexpr size_t len = pattern.length();
 
   size_t pos{0};
   bool part_2_found = false;
@@ -523,7 +512,7 @@ constexpr std::array<size_t, 2> PatternFormatter::_parse_format_pattern()
                            pattern[pos + 7], pattern[pos + 8],
                            pattern[pos + 9], '\0'};
 
-          if (quill::detail::strequal(attr, "(message)"))
+          if (std::string_view{attr} == "(message)")
           {
             // do not increment the style counter
             part_2_found = true;

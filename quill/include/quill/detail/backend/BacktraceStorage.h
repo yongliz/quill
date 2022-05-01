@@ -28,11 +28,11 @@ class BaseEvent;
  * For simplicity this class is used ONLY by the backend worker thread.
  * We push to the queue a BacktraceCommand event to communicate this from the frontend caller threads
  */
-class BacktraceLogRecordStorage
+class BacktraceStorage
 {
 public:
-  BacktraceLogRecordStorage() = default;
-  ~BacktraceLogRecordStorage()
+  BacktraceStorage() = default;
+  ~BacktraceStorage()
   {
     // we want to clear all messages first, calling deallocate on the free list allocator before destructing
     _stored_records_map.clear();

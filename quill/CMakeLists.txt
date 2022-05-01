@@ -7,13 +7,9 @@ set(TARGET_NAME quill)
 
 # header files
 set(HEADER_FILES
-        # Bundled invoke
-        include/quill/bundled/invoke/invoke.h
-
         # quill
         include/quill/detail/backend/BackendWorker.h
-        include/quill/detail/backend/BacktraceLogRecordStorage.h
-        include/quill/detail/backend/FreeListAllocator.h
+        include/quill/detail/backend/BacktraceStorage.h
         include/quill/detail/backend/StringFromTime.h
         include/quill/detail/backend/TimestampFormatter.h
 
@@ -27,8 +23,6 @@ set(HEADER_FILES
         include/quill/detail/misc/RdtscClock.h
         include/quill/detail/misc/RecursiveSpinlock.h
         include/quill/detail/misc/Spinlock.h
-        include/quill/detail/misc/StringView.h
-        include/quill/detail/misc/TypeTraits.h
         include/quill/detail/misc/TypeTraitsCopyable.h
         include/quill/detail/misc/Utilities.h
 
@@ -67,8 +61,7 @@ set(HEADER_FILES
 # source files
 set(SOURCE_FILES
         src/detail/backend/BackendWorker.cpp
-        src/detail/backend/BacktraceLogRecordStorage.cpp
-        src/detail/backend/FreeListAllocator.cpp
+        src/detail/backend/BacktraceStorage.cpp
         src/detail/backend/TimestampFormatter.cpp
         src/detail/backend/StringFromTime.cpp
         src/detail/misc/FileUtilities.cpp
