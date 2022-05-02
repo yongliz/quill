@@ -8,6 +8,7 @@
 #include "quill/Fmt.h"                               // for memory_buffer
 #include "quill/MacroMetadata.h"                     // for MacroMetadata
 #include "quill/QuillError.h"                        // for QUILL_THROW, Quil...
+#include "quill/detail/LoggerDetails.h"
 #include "quill/detail/backend/TimestampFormatter.h" // for TimestampFormatter
 #include "quill/detail/misc/Attributes.h"            // for QUILL_NODISCARD
 #include "quill/detail/misc/Common.h"                // for Timezone, Timezon...
@@ -193,7 +194,7 @@ public:
    */
   inline void format(std::chrono::nanoseconds timestamp, char const* thread_id, char const* thread_name,
                      char const* logger_name, MacroMetadata const& macro_metadata,
-                     quill::detail::FormatFnMemoryBuffer const& formatted_msg) const;
+                     quill::detail::FormatFnMemoryBuffer const& log_msg) const;
 #else
   /**
    * Formats the given LogRecord
@@ -378,7 +379,7 @@ private:
 
 void PatternFormatter::format(std::chrono::nanoseconds timestamp, char const* thread_id, char const* thread_name,
                               char const* logger_name, MacroMetadata const& macro_metadata,
-                              quill::detail::FormatFnMemoryBuffer const& formatted_msg) const
+                              quill::detail::FormatFnMemoryBuffer const& log_msg) const
 {
   // clear out existing buffer
   _formatted_log_record.clear();
@@ -388,7 +389,7 @@ void PatternFormatter::format(std::chrono::nanoseconds timestamp, char const* th
                                            logger_name, macro_metadata);
 
   // append the user requested string
-  _formatted_log_record.append(formatted_msg.begin(), formatted_msg.end());
+  _formatted_log_record.append(log_msg.begin(), log_msg.end());
 
   // Format part 3 of the pattern
   _pattern_formatter_helper_part_3->format(_formatted_log_record, timestamp, thread_id, thread_name,

@@ -47,6 +47,7 @@ set(HEADER_FILES
         include/quill/Fmt.h
         include/quill/Logger.h
         include/quill/LogLevel.h
+        include/quill/MacroMetadata.h
         include/quill/PatternFormatter.h
         include/quill/Quill.h
         include/quill/QuillError.h

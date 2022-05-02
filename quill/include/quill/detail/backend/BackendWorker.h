@@ -125,17 +125,12 @@ private:
    */
   QUILL_ATTRIBUTE_HOT inline void _process_transit_event();
 
+  QUILL_ATTRIBUTE_HOT inline void _write_transit_event(TransitEvent const& transit_event);
+
   /**
    * Force flush all active Handlers
    */
   QUILL_ATTRIBUTE_HOT inline void _force_flush();
-
-  /**
-   * Convert a timestamp from BaseEvent to a time since epoch timestamp in nanoseconds.
-   * @return a timestamp in nanoseconds since epoch
-   */
-  QUILL_NODISCARD QUILL_ATTRIBUTE_HOT inline std::chrono::nanoseconds _get_real_timestamp(
-    detail::Header const& header) const noexcept;
 
   /**
    * Check for dropped messages - only when bounded queue is used
@@ -203,11 +198,12 @@ void BackendWorker::run()
       QUILL_CATCH_ALL() { _error_handler(std::string{"Caught unhandled exception."}); }
 #endif
 
-#if !defined(QUILL_CHRONO_CLOCK)
-      // Use rdtsc clock based on config. The clock requires a few seconds to init as it is
-      // taking samples first
-      _rdtsc_clock = std::make_unique<RdtscClock>(std::chrono::milliseconds{QUILL_RDTSC_RESYNC_INTERVAL});
-#endif
+      if constexpr (std::is_same<detail::Header::using_rdtsc, std::true_type>::value)
+      {
+        // Use rdtsc clock based on config. The clock requires a few seconds to init as it is
+        // taking samples first
+        _rdtsc_clock = std::make_unique<RdtscClock>(std::chrono::milliseconds{QUILL_RDTSC_RESYNC_INTERVAL});
+      }
 
       // Cache this thread's id
       _backend_worker_thread_id = get_thread_id();
@@ -330,10 +326,6 @@ void BackendWorker::_process_transit_event()
 {
   TransitEvent const& transit_event = _transit_events.top();
 
-  // A lambda to obtain the logger details and pass them to backend_process(...), this lambda is
-  // called only in case we need to flush because we are processing a FlushEvent
-  auto obtain_active_handlers = [this]() { return _handler_collection.active_handlers(); };
-
   // If backend_process(...) throws we want to skip this event and move to the next so we catch the
   // error here instead of catching it in the parent try/catch block of main_loop
   QUILL_TRY
@@ -342,39 +334,7 @@ void BackendWorker::_process_transit_event()
     {
       if (transit_event.header.metadata->macro_metadata.level() != LogLevel::Backtrace)
       {
-
-        // TODO:: This is similar to _get_real_timestamp but not easy to make common and avoid the #if !defined(QUILL_CHRONO_CLOCK)
-#if !defined(QUILL_CHRONO_CLOCK)
-        std::chrono::nanoseconds const timestamp =
-          _rdtsc_clock->time_since_epoch(transit_event.header.timestamp);
-#else
-        // Then the timestamp() will be already in epoch no need to convert it like above
-        // The precision of system_clock::time-point is not portable across platforms.
-        std::chrono::system_clock::duration const timestamp_duration{transit_event.header.timestamp};
-        std::chrono::nanoseconds const timestamp = std::chrono::nanoseconds{timestamp_duration};
-#endif
-
-        // Forward the record to all of the logger handlers
-        for (auto& handler : transit_event.header.logger_details->handlers())
-        {
-          handler->formatter().format(
-            timestamp, transit_event.thread_context->thread_id(),
-            transit_event.thread_context->thread_name(), transit_event.header.logger_details->name(),
-            transit_event.header.metadata->macro_metadata, transit_event.formatted_msg);
-
-          // After calling format on the formatter we have to request the formatter record
-          auto const& formatted_log_record_buffer = handler->formatter().formatted_log_record();
-
-          // If all filters are okay we write this log record to the file
-          if (handler->apply_filters(transit_event.thread_context->thread_id(), timestamp,
-                                     transit_event.header.metadata->macro_metadata, formatted_log_record_buffer))
-          {
-            // log to the handler, also pass the log_record_timestamp this is only needed in some
-            // cases like daily file rotation
-            handler->write(formatted_log_record_buffer, timestamp,
-                           transit_event.header.metadata->macro_metadata.level());
-          }
-        }
+        _write_transit_event(transit_event);
 
         // We also need to check the severity of the log message here against the backtrace
         // Check if we should also flush the backtrace messages:
@@ -384,34 +344,10 @@ void BackendWorker::_process_transit_event()
         if (QUILL_UNLIKELY(transit_event.header.metadata->macro_metadata.level() >=
                            transit_event.header.logger_details->backtrace_flush_level()))
         {
-          // process all records in backtrace for this logger_name and log them by calling backend_process_backtrace_log_record note: we don't use obtain_active_handlers
           _backtrace_log_record_storage.process(
             transit_event.header.logger_details->name(),
-            [&obtain_active_handlers, &timestamp](std::string const& stored_thread_id, std::string const& stored_thread_name,
-                                                  TransitEvent const& transit_event)
-            {
-              // TODO:: move this to a function v2
-              // call backend process on each stored record
-              for (auto& handler : transit_event.header.logger_details->handlers())
-              {
-                handler->formatter().format(
-                  timestamp, transit_event.thread_context->thread_id(),
-                  transit_event.thread_context->thread_name(), transit_event.header.logger_details->name(),
-                  transit_event.header.metadata->macro_metadata, transit_event.formatted_msg);
-
-                // After calling format on the formatter we have to request the formatter record
-                auto const& formatted_log_record_buffer = handler->formatter().formatted_log_record();
-
-                // If all filters are okay we write this log record to the file
-                if (handler->apply_filters(transit_event.thread_context->thread_id(), timestamp,
-                                           transit_event.header.metadata->macro_metadata, formatted_log_record_buffer))
-                {
-                  // log to the handler, also pass the log_record_timestamp this is only needed in some cases like daily file rotation
-                  handler->write(formatted_log_record_buffer, timestamp,
-                                 transit_event.header.metadata->macro_metadata.level());
-                }
-              }
-            });
+            [this](std::string const& stored_thread_id, std::string const& stored_thread_name,
+                   TransitEvent const& transit_event) { _write_transit_event(transit_event); });
         }
       }
       else
@@ -432,41 +368,8 @@ void BackendWorker::_process_transit_event()
       // process all records in backtrace for this logger_name and log them by calling backend_process_backtrace_log_record note: we don't use obtain_active_handlers
       _backtrace_log_record_storage.process(
         transit_event.header.logger_details->name(),
-        [&obtain_active_handlers, this](std::string const& stored_thread_id,
-                                        std::string const& stored_thread_name, TransitEvent const& transit_event)
-        {
-#if !defined(QUILL_CHRONO_CLOCK)
-          std::chrono::nanoseconds const timestamp =
-            _rdtsc_clock->time_since_epoch(transit_event.header.timestamp);
-#else
-          // Then the timestamp() will be already in epoch no need to convert it like above
-          // The precision of system_clock::time-point is not portable across platforms.
-          std::chrono::system_clock::duration const timestamp_duration{transit_event.header.timestamp};
-          std::chrono::nanoseconds const timestamp = std::chrono::nanoseconds{timestamp_duration};
-#endif
-
-          // TODO:: move this to a function v2
-          // call backend process on each stored record
-          for (auto& handler : transit_event.header.logger_details->handlers())
-          {
-            handler->formatter().format(
-              timestamp, transit_event.thread_context->thread_id(),
-              transit_event.thread_context->thread_name(), transit_event.header.logger_details->name(),
-              transit_event.header.metadata->macro_metadata, transit_event.formatted_msg);
-
-            // After calling format on the formatter we have to request the formatter record
-            auto const& formatted_log_record_buffer = handler->formatter().formatted_log_record();
-
-            // If all filters are okay we write this log record to the file
-            if (handler->apply_filters(transit_event.thread_context->thread_id(), timestamp,
-                                       transit_event.header.metadata->macro_metadata, formatted_log_record_buffer))
-            {
-              // log to the handler, also pass the log_record_timestamp this is only needed in some cases like daily file rotation
-              handler->write(formatted_log_record_buffer, timestamp,
-                             transit_event.header.metadata->macro_metadata.level());
-            }
-          }
-        });
+        [this](std::string const& stored_thread_id, std::string const& stored_thread_name,
+               TransitEvent const& transit_event) { _write_transit_event(transit_event); });
     }
     else if (transit_event.header.metadata->macro_metadata.event() == MacroMetadata::Event::Flush)
     {
@@ -499,6 +402,46 @@ void BackendWorker::_process_transit_event()
 #endif
 }
 
+/***/
+void BackendWorker::_write_transit_event(TransitEvent const& transit_event)
+{
+  std::chrono::nanoseconds timestamp;
+  if constexpr (std::is_same<detail::Header::using_rdtsc, std::true_type>::value)
+  {
+    timestamp = _rdtsc_clock->time_since_epoch(transit_event.header.timestamp);
+  }
+  else
+  {
+    // Then the timestamp() will be already in epoch no need to convert it like above
+    // The precision of system_clock::time-point is not portable across platforms.
+    std::chrono::system_clock::duration const timestamp_duration{transit_event.header.timestamp};
+    timestamp = std::chrono::nanoseconds{timestamp_duration};
+  }
+
+  // Forward the record to all of the logger handlers
+  for (auto& handler : transit_event.header.logger_details->handlers())
+  {
+    handler->formatter().format(
+      timestamp, transit_event.thread_context->thread_id(),
+      transit_event.thread_context->thread_name(), transit_event.header.logger_details->name(),
+      transit_event.header.metadata->macro_metadata, transit_event.formatted_msg);
+
+    // After calling format on the formatter we have to request the formatter record
+    auto const& formatted_log_record_buffer = handler->formatter().formatted_log_record();
+
+    // If all filters are okay we write this log record to the file
+    if (handler->apply_filters(transit_event.thread_context->thread_id(), timestamp,
+                               transit_event.header.metadata->macro_metadata, formatted_log_record_buffer))
+    {
+      // log to the handler, also pass the log_record_timestamp this is only needed in some
+      // cases like daily file rotation
+      handler->write(formatted_log_record_buffer, timestamp,
+                     transit_event.header.metadata->macro_metadata.level());
+    }
+  }
+}
+
+/***/
 void BackendWorker::_force_flush()
 {
   if (_has_unflushed_messages)
@@ -558,27 +501,6 @@ void BackendWorker::_main_loop()
     // Sleep for the specified duration as we found no events in any of the queues to process
     std::this_thread::sleep_for(_backend_thread_sleep_duration);
   }
-}
-
-/***/
-std::chrono::nanoseconds BackendWorker::_get_real_timestamp(detail::Header const& header) const noexcept
-{
-#if !defined(QUILL_CHRONO_CLOCK)
-  static_assert(
-    std::is_same<detail::Header::using_rdtsc, std::true_type>::value,
-    "Header has a std::chrono timestamp, but the backend thread is using rdtsc timestamp");
-  // pass to our clock the stored rdtsc from the caller thread
-  return _rdtsc_clock->time_since_epoch(header.timestamp);
-#else
-  static_assert(
-    std::is_same<detail::Header::using_rdtsc, std::false_type>::value,
-    "Header has an rdtsc timestamp, but the backend thread is using std::chrono timestamp");
-
-  // Then the timestamp() will be already in epoch no need to convert it like above
-  // The precision of system_clock::time-point is not portable across platforms.
-  std::chrono::system_clock::duration const timestamp_duration{header.timestamp};
-  return std::chrono::nanoseconds{timestamp_duration};
-#endif
 }
 
 /***/

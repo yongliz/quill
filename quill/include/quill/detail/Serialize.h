@@ -8,7 +8,6 @@
 #include "misc/Utilities.h"
 #include "quill/LogLevel.h"
 #include "quill/MacroMetadata.h"
-#include "quill/detail/LoggerDetails.h"
 #include "quill/detail/misc/Common.h"
 #include "quill/detail/misc/Rdtsc.h"
 #include "quill/detail/misc/TypeTraitsCopyable.h"
@@ -19,6 +18,10 @@ namespace quill
 {
 namespace detail
 {
+
+/** Forward declaration **/
+class LoggerDetails;
+
 template <typename Arg>
 constexpr bool is_type_of_c_string()
 {

@@ -1,6 +1,10 @@
+/**
+ * Copyright(c) 2020-present, Odysseas Georgoudis & quill contributors.
+ * Distributed under the MIT License (http://opensource.org/licenses/MIT)
+ */
+
 #pragma once
 
-#include "quill/detail/LoggerDetails.h"
 #include "quill/detail/Serialize.h"
 #include "quill/detail/ThreadContext.h"
 #include "quill/detail/misc/Common.h"

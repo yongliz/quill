@@ -1,5 +1,6 @@
 #include "quill/detail/backend/BacktraceStorage.h"
 #include "quill/QuillError.h" // for QUILL_THROW, Quil...
+#include "quill/detail/LoggerDetails.h"
 #include "quill/detail/misc/Common.h"
 #include "quill/detail/misc/Os.h"
 
