@@ -14,7 +14,6 @@
 
 #include "quill/detail/misc/Attributes.h"
 #include "quill/detail/misc/Common.h"
-#include "quill/detail/misc/Macros.h"
 #include "quill/detail/misc/Os.h"
 
 namespace quill::detail

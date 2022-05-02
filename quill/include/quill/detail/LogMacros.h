@@ -8,7 +8,7 @@
 #include "quill/detail/misc/Common.h"
 
 #include "quill/Logger.h"
-#include "quill/detail/misc/Macros.h"
+#include "quill/detail/misc/Common.h"
 #include <type_traits>
 
 // Config Options
@@ -30,14 +30,14 @@
 // Main Log Macros
 
 #if defined(QUILL_NOFN_MACROS)
-// clang-format off
+  // clang-format off
 #define QUILL_LOGGER_CALL_NOFN(likelyhood, logger, log_statement_level, fmt, ...)                  \
   do {                                                                                             \
     struct {                                                                                       \
-      constexpr quill::LogMacroMetadata operator()() const noexcept {                              \
-        return quill::LogMacroMetadata{QUILL_STRINGIFY(__LINE__), __FILE__,                        \
+      constexpr quill::MacroMetadata operator()() const noexcept {                              \
+        return quill::MacroMetadata{QUILL_STRINGIFY(__LINE__), __FILE__,                        \
                                                 "n/a", fmt, log_statement_level,                   \
-                                                   quill::LogMacroMetadata::Event::Log}; }         \
+                                                   quill::MacroMetadata::Event::Log}; }         \
       } anonymous_log_record_info;                                                                 \
                                                                                                    \
     if (likelyhood(logger->template should_log<log_statement_level>()))                            \
@@ -54,10 +54,10 @@
   do {                                                                                             \
     static constexpr char const* function_name = __FUNCTION__;                                     \
     struct {                                                                                       \
-      constexpr quill::LogMacroMetadata operator()() const noexcept {                              \
-        return quill::LogMacroMetadata{QUILL_STRINGIFY(__LINE__), __FILE__,                        \
+      constexpr quill::MacroMetadata operator()() const noexcept {                              \
+        return quill::MacroMetadata{QUILL_STRINGIFY(__LINE__), __FILE__,                        \
                                                 function_name, fmt, log_statement_level,           \
-                                                    quill::LogMacroMetadata::Event::Log}; }        \
+                                                    quill::MacroMetadata::Event::Log}; }        \
       } anonymous_log_record_info;                                                                 \
                                                                                                    \
     if (likelyhood(logger->template should_log<log_statement_level>()))                            \
@@ -71,10 +71,10 @@
   do {                                                                                             \
     static constexpr char const* function_name = __FUNCTION__;                                     \
     struct {                                                                                       \
-      constexpr quill::LogMacroMetadata operator()() const noexcept {                              \
-        return quill::LogMacroMetadata{QUILL_STRINGIFY(__LINE__), __FILE__,                        \
+      constexpr quill::MacroMetadata operator()() const noexcept {                              \
+        return quill::MacroMetadata{QUILL_STRINGIFY(__LINE__), __FILE__,                        \
                                                 function_name, fmt, quill::LogLevel::Backtrace,    \
-                                                           quill::LogMacroMetadata::Event::Log}; } \
+                                                           quill::MacroMetadata::Event::Log}; } \
       } anonymous_log_record_info;                                                                 \
                                                                                                    \
     if (QUILL_LIKELY(logger->template should_log<quill::LogLevel::Backtrace>()))                   \

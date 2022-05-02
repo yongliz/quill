@@ -1,8 +1,8 @@
 #include "quill/handlers/TimeRotatingFileHandler.h"
 #include "quill/QuillError.h"                // for QuillError, QUILL_THROW
 #include "quill/detail/misc/Common.h"        // for filename_t
+#include "quill/detail/misc/Common.h"        // for QUILL_UNLIKELY
 #include "quill/detail/misc/FileUtilities.h" // for append_date_to_filename
-#include "quill/detail/misc/Macros.h"        // for QUILL_UNLIKELY
 #include "quill/detail/misc/Os.h"            // for localtime_rs
 #include "quill/handlers/StreamHandler.h"    // for StreamHandler
 #include <cerrno>                            // for errno

@@ -1,6 +1,6 @@
 #include "quill/detail/misc/Os.h"
 #include "quill/QuillError.h"
-#include "quill/detail/misc/Macros.h"
+#include "quill/detail/misc/Common.h"
 #include "quill/detail/misc/Utilities.h"
 #include <array>
 #include <cerrno> // for errno, EINVAL, ENOMEM

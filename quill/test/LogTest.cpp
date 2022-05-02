@@ -904,7 +904,7 @@ public:
   FileFilter1() : quill::FilterBase("FileFilter1"){};
 
   QUILL_NODISCARD bool filter(char const* thread_id, std::chrono::nanoseconds log_record_timestamp,
-                              quill::LogMacroMetadata const& metadata,
+                              quill::MacroMetadata const& metadata,
                               fmt::memory_buffer const& formatted_record) noexcept override
   {
     if (metadata.level() < quill::LogLevel::Warning)
@@ -924,7 +924,7 @@ public:
   FileFilter2() : quill::FilterBase("FileFilter2"){};
 
   QUILL_NODISCARD bool filter(char const* thread_id, std::chrono::nanoseconds log_record_timestamp,
-                              quill::LogMacroMetadata const& metadata,
+                              quill::MacroMetadata const& metadata,
                               fmt::memory_buffer const& formatted_record) noexcept override
   {
     if (metadata.level() >= quill::LogLevel::Warning)

@@ -10,10 +10,10 @@
 #include "quill/detail/Config.h"
 #include "quill/detail/HandlerCollection.h"
 #include "quill/detail/LoggerCollection.h"
+#include "quill/detail/Serialize.h"
 #include "quill/detail/SignalHandler.h" // for init_signal_handler
 #include "quill/detail/ThreadContextCollection.h"
 #include "quill/detail/backend/BackendWorker.h"
-#include "quill/detail/misc/Spinlock.h"
 #include <mutex> // for call_once, once_flag
 
 namespace quill
@@ -97,10 +97,11 @@ public:
     // we need to write an event to the queue passing this atomic variable
     struct
     {
-      constexpr quill::LogMacroMetadata operator()() const noexcept
+      constexpr quill::MacroMetadata operator()() const noexcept
       {
-        return quill::LogMacroMetadata{
-          QUILL_STRINGIFY(__LINE__), __FILE__, __FUNCTION__, "", LogLevel::Critical, quill::LogMacroMetadata::Event::Flush};
+        return quill::MacroMetadata{
+          QUILL_STRINGIFY(__LINE__),         __FILE__, __FUNCTION__, "", LogLevel::Critical,
+          quill::MacroMetadata::Event::Flush};
       }
     } anonymous_log_record_info;
 
@@ -211,6 +212,43 @@ private:
   BackendWorker _backend_worker{_config, _thread_context_collection, _handler_collection};
   std::once_flag _start_init_once_flag; /** flag to start the thread only once, in case start() is called multiple times */
   std::string _process_id = fmt::format_int(get_process_id()).str();
+};
+
+/**
+ * A wrapper class around LogManager to make LogManager act as a singleton.
+ * In fact LogManager is always a singleton as every access is provided via this class but this
+ * gives us the possibility have multiple unit tests for LogManager as it would be harder to test
+ * a singleton class
+ */
+class LogManagerSingleton
+{
+public:
+  /**
+   * Access to singleton instance
+   * @return a reference to the singleton
+   */
+  static LogManagerSingleton& instance() noexcept
+  {
+    static LogManagerSingleton instance;
+    return instance;
+  }
+
+  /**
+   * Access to LogManager
+   * @return a reference to the log manager
+   */
+  detail::LogManager& log_manager() noexcept { return _log_manager; }
+
+private:
+  LogManagerSingleton() = default;
+  ~LogManagerSingleton()
+  {
+    // always call stop on destruction to log everything
+    _log_manager.stop_backend_worker();
+  }
+
+private:
+  detail::LogManager _log_manager;
 };
 } // namespace detail
 } // namespace quill

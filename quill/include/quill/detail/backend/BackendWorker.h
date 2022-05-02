@@ -10,16 +10,16 @@
 #include "quill/QuillError.h"               // for QUILL_CATCH, QUILL...
 #include "quill/detail/Config.h"            // for Config
 #include "quill/detail/HandlerCollection.h" // for HandlerCollection
-#include "quill/detail/Header.h"
 #include "quill/detail/LoggerDetails.h"
-#include "quill/detail/ThreadContext.h"                     // for ThreadContext, Thr...
-#include "quill/detail/ThreadContextCollection.h"           // for ThreadContextColle...
-#include "quill/detail/backend/BacktraceStorage.h"          // for BacktraceStorage
-#include "quill/detail/misc/Attributes.h"                   // for QUILL_ATTRIBUTE_HOT
-#include "quill/detail/misc/Common.h"                       // for QUILL_RDTSC_RESYNC...
-#include "quill/detail/misc/Macros.h"                       // for QUILL_LIKELY
-#include "quill/detail/misc/Os.h"                           // for set_cpu_affinity, get_thread_id
-#include "quill/detail/misc/RdtscClock.h"                   // for RdtscClock
+#include "quill/detail/Serialize.h"
+#include "quill/detail/ThreadContext.h"            // for ThreadContext, Thr...
+#include "quill/detail/ThreadContextCollection.h"  // for ThreadContextColle...
+#include "quill/detail/backend/BacktraceStorage.h" // for BacktraceStorage
+#include "quill/detail/misc/Attributes.h"          // for QUILL_ATTRIBUTE_HOT
+#include "quill/detail/misc/Common.h"              // for QUILL_RDTSC_RESYNC...
+#include "quill/detail/misc/Common.h"              // for QUILL_LIKELY
+#include "quill/detail/misc/Os.h"                  // for set_cpu_affinity, get_thread_id
+#include "quill/detail/misc/RdtscClock.h"          // for RdtscClock
 #include "quill/detail/misc/Utilities.h"
 #include "quill/detail/spsc_queue/UnboundedQueue.h"
 #include "quill/handlers/Handler.h" // for Handler
@@ -297,14 +297,14 @@ void BackendWorker::_read_queue_and_decode(ThreadContext* thread_context, bool i
     std::memcpy(&header, read_buffer, sizeof(detail::Header));
     read_buffer += sizeof(detail::Header);
 
-    MemoryBuffer membuf;
+    FormatFnMemoryBuffer membuf;
     std::vector<fmt::basic_format_arg<fmt::format_context>> args;
 
     // it is a flush event, we store the pointer of the passed in variable to the transit event
     std::atomic<bool>* flush_flag{nullptr};
 
     // we need to check and do not try to format the flush events as that wouldn't be valid
-    if (header.metadata->macro_metadata.event() != LogMacroMetadata::Event::Flush)
+    if (header.metadata->macro_metadata.event() != MacroMetadata::Event::Flush)
     {
       read_buffer = header.metadata->format_to_fn(header.metadata->macro_metadata.message_format(),
                                                   read_buffer, membuf, args);
@@ -338,7 +338,7 @@ void BackendWorker::_process_transit_event()
   // error here instead of catching it in the parent try/catch block of main_loop
   QUILL_TRY
   {
-    if (transit_event.header.metadata->macro_metadata.event() == LogMacroMetadata::Event::Log)
+    if (transit_event.header.metadata->macro_metadata.event() == MacroMetadata::Event::Log)
     {
       if (transit_event.header.metadata->macro_metadata.level() != LogLevel::Backtrace)
       {
@@ -420,14 +420,14 @@ void BackendWorker::_process_transit_event()
         _backtrace_log_record_storage.store(transit_event);
       }
     }
-    else if (transit_event.header.metadata->macro_metadata.event() == LogMacroMetadata::Event::InitBacktrace)
+    else if (transit_event.header.metadata->macro_metadata.event() == MacroMetadata::Event::InitBacktrace)
     {
       // we can just convert the capacity back to int here and use it
       _backtrace_log_record_storage.set_capacity(
         transit_event.header.logger_details->name(),
         std::stoi(std::string{transit_event.formatted_msg.begin(), transit_event.formatted_msg.end()}));
     }
-    else if (transit_event.header.metadata->macro_metadata.event() == LogMacroMetadata::Event::FlushBacktrace)
+    else if (transit_event.header.metadata->macro_metadata.event() == MacroMetadata::Event::FlushBacktrace)
     {
       // process all records in backtrace for this logger_name and log them by calling backend_process_backtrace_log_record note: we don't use obtain_active_handlers
       _backtrace_log_record_storage.process(
@@ -468,7 +468,7 @@ void BackendWorker::_process_transit_event()
           }
         });
     }
-    else if (transit_event.header.metadata->macro_metadata.event() == LogMacroMetadata::Event::Flush)
+    else if (transit_event.header.metadata->macro_metadata.event() == MacroMetadata::Event::Flush)
     {
       // this is a flush event so we need to notify the caller to continue now
       transit_event.flush_flag->store(true);

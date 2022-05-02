@@ -1,6 +1,6 @@
 #include "quill/detail/ThreadContextCollection.h"
 #include "quill/detail/ThreadContext.h" // for ThreadContext, ThreadContext...
-#include "quill/detail/misc/Macros.h"   // for QUILL_UNLIKELY
+#include "quill/detail/misc/Common.h"   // for QUILL_UNLIKELY
 #include <algorithm>                    // for find_if
 #include <mutex>                        // for lock_guard
 #include <type_traits>                  // for remove_extent<>::type
@@ -44,9 +44,9 @@ ThreadContextCollection::ThreadContextWrapper::~ThreadContextWrapper() noexcept
 /***/
 void ThreadContextCollection::register_thread_context(std::shared_ptr<ThreadContext> const& thread_context)
 {
-  _spinlock.lock();
+  _mutex.lock();
   _thread_contexts.push_back(thread_context);
-  _spinlock.unlock();
+  _mutex.unlock();
   _set_new_thread_context();
 }
 
@@ -57,7 +57,7 @@ ThreadContextCollection::backend_thread_contexts_cache_t const& ThreadContextCol
   if (QUILL_UNLIKELY(_has_new_thread_context()))
   {
     // if the thread _thread_contexts was changed we lock and remake our reference cache
-    std::lock_guard<Spinlock> const lock(_spinlock);
+    std::lock_guard<std::mutex> const lock(_mutex);
     _thread_context_cache.clear();
 
     // Remake thread context ref
@@ -131,7 +131,7 @@ bool ThreadContextCollection::_has_invalid_thread_context() const noexcept
 /***/
 void ThreadContextCollection::_remove_shared_invalidated_thread_context(ThreadContext const* thread_context)
 {
-  std::lock_guard<Spinlock> const lock(_spinlock);
+  std::lock_guard<std::mutex> const lock(_mutex);
 
   auto thread_context_it = std::find_if(_thread_contexts.begin(), _thread_contexts.end(),
                                         [thread_context](std::shared_ptr<ThreadContext> const& elem) {

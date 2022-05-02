@@ -12,17 +12,15 @@ set(HEADER_FILES
         include/quill/detail/backend/BacktraceStorage.h
         include/quill/detail/backend/StringFromTime.h
         include/quill/detail/backend/TimestampFormatter.h
+        include/quill/detail/backend/TransitEvent.h
 
         include/quill/detail/misc/AlignedAllocator.h
         include/quill/detail/misc/Attributes.h
         include/quill/detail/misc/Common.h
         include/quill/detail/misc/FileUtilities.h
-        include/quill/detail/misc/Macros.h
         include/quill/detail/misc/Os.h
         include/quill/detail/misc/Rdtsc.h
         include/quill/detail/misc/RdtscClock.h
-        include/quill/detail/misc/RecursiveSpinlock.h
-        include/quill/detail/misc/Spinlock.h
         include/quill/detail/misc/TypeTraitsCopyable.h
         include/quill/detail/misc/Utilities.h
 
@@ -35,7 +33,7 @@ set(HEADER_FILES
         include/quill/detail/LoggerDetails.h
         include/quill/detail/LogMacros.h
         include/quill/detail/LogManager.h
-        include/quill/detail/LogManagerSingleton.h
+        include/quill/detail/Serialize.h
         include/quill/detail/ThreadContext.h
         include/quill/detail/ThreadContextCollection.h
         include/quill/detail/SignalHandler.h
@@ -49,13 +47,11 @@ set(HEADER_FILES
         include/quill/Fmt.h
         include/quill/Logger.h
         include/quill/LogLevel.h
-        include/quill/LogMacroMetadata.h
         include/quill/PatternFormatter.h
         include/quill/Quill.h
         include/quill/QuillError.h
         include/quill/TweakMe.h
         include/quill/Utility.h
-        include/quill/Version.h
         )
 
 # source files
@@ -67,13 +63,9 @@ set(SOURCE_FILES
         src/detail/misc/FileUtilities.cpp
         src/detail/misc/Os.cpp
         src/detail/misc/RdtscClock.cpp
-        src/detail/misc/RecursiveSpinlock.cpp
-        src/detail/misc/Spinlock.cpp
         src/detail/misc/Utilities.cpp
-        src/detail/Config.cpp
         src/detail/HandlerCollection.cpp
         src/detail/LoggerCollection.cpp
-        src/detail/LogManagerSingleton.cpp
         src/detail/SignalHandler.cpp
         src/detail/ThreadContextCollection.cpp
 

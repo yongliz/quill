@@ -7,7 +7,6 @@
 
 #include "quill/detail/misc/Attributes.h"  // for QUILL_NODISCARD, QUILL_ATT...
 #include "quill/detail/misc/Common.h"      // for filename_t
-#include "quill/detail/misc/Spinlock.h"    // for Spinlock
 #include "quill/handlers/ConsoleHandler.h" // for ConsoleColours
 #include "quill/handlers/FileHandler.h"    // for FilenameAppend
 #include "quill/handlers/StreamHandler.h"  // for StreamHandler
@@ -67,7 +66,7 @@ public:
     filename_t const& handler_name, Args&&... args)
   {
     // Protect shared access
-    std::lock_guard<Spinlock> const lock{_spinlock};
+    std::lock_guard<std::mutex> const lock{_mutex};
 
     // Try to insert it unless we failed it means we already had it
     auto const search = _handler_collection.find(handler_name);
@@ -94,7 +93,7 @@ public:
     filename_t const& handler_name, Args&&... args)
   {
     // Protect shared access
-    std::lock_guard<Spinlock> const lock{_spinlock};
+    std::lock_guard<std::mutex> const lock{_mutex};
 
     // Try to insert it unless we failed it means we already had it
     auto const search = _handler_collection.find(handler_name);
@@ -153,7 +152,7 @@ private:
   std::unordered_map<filename_t, std::unique_ptr<Handler>> _handler_collection;
 
   /** Use to lock both _active_handlers_collection and _file_handler_collection, mutable to have an active_handlers() const function */
-  mutable Spinlock _spinlock;
+  mutable std::mutex _mutex;
 };
 } // namespace detail
 } // namespace quill

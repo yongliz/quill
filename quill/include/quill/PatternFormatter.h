@@ -6,7 +6,7 @@
 #pragma once
 
 #include "quill/Fmt.h"                               // for memory_buffer
-#include "quill/LogMacroMetadata.h"                  // for LogMacroMetadata
+#include "quill/MacroMetadata.h"                     // for MacroMetadata
 #include "quill/QuillError.h"                        // for QUILL_THROW, Quil...
 #include "quill/detail/backend/TimestampFormatter.h" // for TimestampFormatter
 #include "quill/detail/misc/Attributes.h"            // for QUILL_NODISCARD
@@ -82,7 +82,7 @@ private:
      */
     virtual void format(fmt::memory_buffer& memory_buffer, std::chrono::nanoseconds timestamp,
                         char const* thread_id, char const* thread_name, char const* logger_name,
-                        LogMacroMetadata const& macro_metadata) const = 0;
+                        MacroMetadata const& macro_metadata) const = 0;
   };
 
   /**
@@ -105,9 +105,8 @@ private:
      * @param logger_name name of logger
      * @param logline_info pointer to the log line info object
      */
-    void format(fmt::memory_buffer& memory_buffer, std::chrono::nanoseconds timestamp,
-                char const* thread_id, char const* thread_name, char const* logger_name,
-                LogMacroMetadata const& logline_info) const override
+    void format(fmt::memory_buffer& memory_buffer, std::chrono::nanoseconds timestamp, char const* thread_id,
+                char const* thread_name, char const* logger_name, MacroMetadata const& logline_info) const override
     {
       // lambda expand the stored tuple arguments
       auto format_buffer = [this, &memory_buffer, timestamp, thread_id, thread_name, logger_name,
@@ -192,9 +191,9 @@ public:
    * @param formatted_msg
    * @param args log statement arguments
    */
-  inline void format(std::chrono::nanoseconds timestamp, char const* thread_id,
-                     char const* thread_name, char const* logger_name,
-                     LogMacroMetadata const& macro_metadata, MemoryBuffer const& formatted_msg) const;
+  inline void format(std::chrono::nanoseconds timestamp, char const* thread_id, char const* thread_name,
+                     char const* logger_name, MacroMetadata const& macro_metadata,
+                     quill::detail::FormatFnMemoryBuffer const& formatted_msg) const;
 #else
   /**
    * Formats the given LogRecord
@@ -213,7 +212,7 @@ public:
   template <typename... Args>
   typename std::enable_if_t<!(detail::any_is_same<std::wstring, void, Args...>::value), void> format(
     std::chrono::nanoseconds timestamp, char const* thread_id, char const* thread_name,
-    char const* logger_name, LogMacroMetadata const& logline_info, Args const&... args) const;
+    char const* logger_name, MacroMetadata const& logline_info, Args const&... args) const;
 
   /**
    * Formats the given LogRecord after converting the wide characters to UTF-8
@@ -232,7 +231,7 @@ public:
   template <typename... Args>
   typename std::enable_if_t<(detail::any_is_same<std::wstring, void, Args...>::value), void> format(
     std::chrono::nanoseconds timestamp, char const* thread_id, char const* thread_name,
-    char const* logger_name, LogMacroMetadata const& logline_info, Args const&... args) const;
+    char const* logger_name, MacroMetadata const& logline_info, Args const&... args) const;
 #endif
 
   /**
@@ -246,7 +245,7 @@ private:
    * The stored callback type that will return the appropriate value based on the format pattern specifiers
    */
   using argument_callback_t =
-    std::function<char const*(std::chrono::nanoseconds, char const*, char const*, char const*, LogMacroMetadata const&)>;
+    std::function<char const*(std::chrono::nanoseconds, char const*, char const*, char const*, MacroMetadata const&)>;
 
   /**
    * Generate a tuple of callbacks [](size i) { };
@@ -377,9 +376,9 @@ private:
 #if !defined(_WIN32)
 /***/
 
-void PatternFormatter::format(std::chrono::nanoseconds timestamp, char const* thread_id,
-                              char const* thread_name, char const* logger_name,
-                              LogMacroMetadata const& macro_metadata, MemoryBuffer const& formatted_msg) const
+void PatternFormatter::format(std::chrono::nanoseconds timestamp, char const* thread_id, char const* thread_name,
+                              char const* logger_name, MacroMetadata const& macro_metadata,
+                              quill::detail::FormatFnMemoryBuffer const& formatted_msg) const
 {
   // clear out existing buffer
   _formatted_log_record.clear();
@@ -403,7 +402,7 @@ void PatternFormatter::format(std::chrono::nanoseconds timestamp, char const* th
 template <typename... Args>
 typename std::enable_if_t<!(detail::any_is_same<std::wstring, void, Args...>::value), void> PatternFormatter::format(
   std::chrono::nanoseconds timestamp, const char* thread_id, const char* thread_name,
-  char const* logger_name, LogMacroMetadata const& logline_info, Args const&... args) const
+  char const* logger_name, MacroMetadata const& logline_info, Args const&... args) const
 {
   // clear out existing buffer
   _formatted_log_record.clear();
@@ -428,7 +427,7 @@ typename std::enable_if_t<!(detail::any_is_same<std::wstring, void, Args...>::va
 template <typename... Args>
 typename std::enable_if_t<(detail::any_is_same<std::wstring, void, Args...>::value), void> PatternFormatter::format(
   std::chrono::nanoseconds timestamp, char const* thread_id, const char* thread_name,
-  char const* logger_name, LogMacroMetadata const& logline_info, Args const&... args) const
+  char const* logger_name, MacroMetadata const& logline_info, Args const&... args) const
 {
   // clear out existing buffer
   _formatted_log_record.clear();

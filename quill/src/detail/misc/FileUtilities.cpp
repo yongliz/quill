@@ -1,6 +1,6 @@
 #include "quill/detail/misc/FileUtilities.h"
 #include "quill/QuillError.h"         // for QUILL_THROW, QuillError
-#include "quill/detail/misc/Macros.h" // for QUILL_UNLIKELY
+#include "quill/detail/misc/Common.h" // for QUILL_UNLIKELY
 #include "quill/detail/misc/Os.h"     // for fsize, localtime_rs, remove
 #include <cerrno>                     // for errno
 #include <ctime>                      // for time_t

@@ -2,7 +2,7 @@
 #include "quill/QuillError.h"
 #include "quill/detail/Config.h"                    // for Config
 #include "quill/detail/HandlerCollection.h"         // for HandlerCollection
-#include "quill/detail/LogManagerSingleton.h"       // for LogManagerSingleton
+#include "quill/detail/LogManager.h"                // for LogManagerSingleton
 #include "quill/detail/LoggerCollection.h"          // for LoggerCollection
 #include "quill/detail/ThreadContext.h"             // for ThreadContext, Thr...
 #include "quill/detail/ThreadContextCollection.h"   // for ThreadContextColle...

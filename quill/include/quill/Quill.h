@@ -9,7 +9,6 @@
 
 #include "quill/detail/LogMacros.h"             // for filename_t
 #include "quill/detail/LogManager.h"            // for LogManager
-#include "quill/detail/LogManagerSingleton.h"   // for LogManagerSingleton
 #include "quill/detail/backend/BackendWorker.h" // for backend_worker_error_h...
 #include "quill/detail/misc/Attributes.h"       // for QUILL_ATTRIBUTE_COLD
 #include "quill/detail/misc/Common.h"           // for Timezone
@@ -23,6 +22,12 @@
 
 namespace quill
 {
+
+/** Version Info **/
+constexpr uint32_t VersionMajor{2};
+constexpr uint32_t VersionMinor{0};
+constexpr uint32_t VersionPatch{0};
+constexpr uint32_t Version{VersionMajor * 10000 + VersionMinor * 100 + VersionPatch};
 
 /** forward declarations **/
 class Handler;
@@ -215,11 +220,9 @@ QUILL_NODISCARD QUILL_ATTRIBUTE_COLD Handler* time_rotating_file_handler(
 /**
  * @see rotating_file_handler
  */
-QUILL_NODISCARD QUILL_ATTRIBUTE_COLD Handler* rotating_file_handler(std::string const& base_filename,
-                                                                    std::string const& mode = std::string{"a"},
-                                                                    size_t max_bytes = 0,
-                                                                    uint32_t backup_count = 0, 
-                                                                    bool overwrite_oldest_files = true);
+QUILL_NODISCARD QUILL_ATTRIBUTE_COLD Handler* rotating_file_handler(
+  std::string const& base_filename, std::string const& mode = std::string{"a"},
+  size_t max_bytes = 0, uint32_t backup_count = 0, bool overwrite_oldest_files = true);
 #endif
 
 /**

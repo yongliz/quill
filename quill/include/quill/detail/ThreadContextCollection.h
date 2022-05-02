@@ -8,12 +8,12 @@
 #include "quill/detail/misc/AlignedAllocator.h" // for CacheAlignedAllocator
 #include "quill/detail/misc/Attributes.h"       // for QUILL_ATTRIBUTE_HOT
 #include "quill/detail/misc/Common.h"           // for CACHELINE_SIZE
-#include "quill/detail/misc/Spinlock.h"         // for Spinlock
 #include <atomic>                               // for atomic
 #include <cassert>                              // for assert
 #include <cstdint>                              // for uint8_t
 #include <memory>                               // for shared_ptr
-#include <vector>                               // for vector
+#include <mutex>
+#include <vector> // for vector
 
 namespace quill
 {
@@ -190,7 +190,7 @@ private:
 private:
   Config const& _config; /**< reference to config */
 
-  Spinlock _spinlock; /**< Protect access when register contexts or removing contexts */
+  std::mutex _mutex; /**< Protect access when register contexts or removing contexts */
   std::vector<std::shared_ptr<ThreadContext>> _thread_contexts; /**< The registered contexts */
 
   /**<

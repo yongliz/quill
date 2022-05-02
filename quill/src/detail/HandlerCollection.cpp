@@ -36,7 +36,7 @@ StreamHandler* HandlerCollection::stderr_console_handler(std::string const& stde
 void HandlerCollection::subscribe_handler(Handler* handler_to_insert)
 {
   // Protect shared access
-  std::lock_guard<Spinlock> const lock{_spinlock};
+  std::lock_guard<std::mutex> const lock{_mutex};
 
   // Check if we already have this object
   auto const search = std::find_if(
@@ -57,7 +57,7 @@ std::vector<Handler*> HandlerCollection::active_handlers() const
 
   // Protect shared access, we just use a lock here since this function is not used when logging
   // messages but only in special cases e.g. flushing
-  std::lock_guard<Spinlock> const lock{_spinlock};
+  std::lock_guard<std::mutex> const lock{_mutex};
   subscribed_handlers_collection = _active_handlers_collection;
 
   return subscribed_handlers_collection;
@@ -68,7 +68,7 @@ StreamHandler* HandlerCollection::_create_console_handler(filename_t const& stre
                                                           ConsoleColours const& console_colours)
 {
   // Protect shared access
-  std::lock_guard<Spinlock> const lock{_spinlock};
+  std::lock_guard<std::mutex> const lock{_mutex};
 
   // Try to insert it unless we failed it means we already had it
   auto const search = _handler_collection.find(stream);

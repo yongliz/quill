@@ -8,11 +8,11 @@
 #include "quill/Fmt.h"
 #include "quill/LogLevel.h"
 #include "quill/QuillError.h"
-#include "quill/detail/Header.h"
 #include "quill/detail/LoggerDetails.h"
+#include "quill/detail/Serialize.h"
 #include "quill/detail/ThreadContext.h"
 #include "quill/detail/ThreadContextCollection.h"
-#include "quill/detail/misc/Macros.h"
+#include "quill/detail/misc/Common.h"
 #include "quill/detail/misc/Rdtsc.h"
 #include "quill/detail/misc/TypeTraitsCopyable.h"
 #include "quill/detail/misc/Utilities.h"
@@ -99,7 +99,7 @@ public:
    * @note This function is thread-safe.
    * @param fmt_args format arguments
    */
-  template <typename TLogMacroMetadata, typename TFormatString, typename... FmtArgs>
+  template <typename TMacroMetadata, typename TFormatString, typename... FmtArgs>
   QUILL_ALWAYS_INLINE_HOT void log(TFormatString format_string, FmtArgs&&... fmt_args)
   {
     fmt::detail::check_format_string<std::remove_reference_t<FmtArgs>...>(format_string);
@@ -136,7 +136,7 @@ public:
     write_buffer = detail::align_pointer<alignof(detail::Header), std::byte>(write_buffer);
 
     new (write_buffer)
-      detail::Header(get_metadata_ptr<TLogMacroMetadata, FmtArgs...>, std::addressof(_logger_details));
+      detail::Header(get_metadata_ptr<TMacroMetadata, FmtArgs...>, std::addressof(_logger_details));
     write_buffer += sizeof(detail::Header);
 
     // encode remaining arguments
@@ -154,13 +154,13 @@ public:
    */
   void init_backtrace(uint32_t capacity, LogLevel backtrace_flush_level = LogLevel::None)
   {
-    // we do not care about the other fields, except quill::LogMacroMetadata::Event::InitBacktrace
+    // we do not care about the other fields, except quill::MacroMetadata::Event::InitBacktrace
     struct
     {
-      constexpr quill::LogMacroMetadata operator()() const noexcept
+      constexpr quill::MacroMetadata operator()() const noexcept
       {
-        return quill::LogMacroMetadata{
-          QUILL_STRINGIFY(__LINE__), __FILE__, __FUNCTION__, "{}", LogLevel::Critical, quill::LogMacroMetadata::Event::InitBacktrace};
+        return quill::MacroMetadata{
+          QUILL_STRINGIFY(__LINE__), __FILE__, __FUNCTION__, "{}", LogLevel::Critical, quill::MacroMetadata::Event::InitBacktrace};
       }
     } anonymous_log_record_info;
 
@@ -176,13 +176,13 @@ public:
    */
   void flush_backtrace()
   {
-    // we do not care about the other fields, except quill::LogMacroMetadata::Event::Flush
+    // we do not care about the other fields, except quill::MacroMetadata::Event::Flush
     struct
     {
-      constexpr quill::LogMacroMetadata operator()() const noexcept
+      constexpr quill::MacroMetadata operator()() const noexcept
       {
-        return quill::LogMacroMetadata{
-          QUILL_STRINGIFY(__LINE__), __FILE__, __FUNCTION__, "", LogLevel::Critical, quill::LogMacroMetadata::Event::FlushBacktrace};
+        return quill::MacroMetadata{
+          QUILL_STRINGIFY(__LINE__), __FILE__, __FUNCTION__, "", LogLevel::Critical, quill::MacroMetadata::Event::FlushBacktrace};
       }
     } anonymous_log_record_info;
 

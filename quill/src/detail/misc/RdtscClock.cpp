@@ -1,5 +1,5 @@
 #include "quill/detail/misc/RdtscClock.h"
-#include "quill/detail/misc/Macros.h" // for QUILL_LIKELY
+#include "quill/detail/misc/Common.h" // for QUILL_LIKELY
 #include "quill/detail/misc/Rdtsc.h"  // for rdtsc
 #include <algorithm>                  // for nth_element
 #include <array>                      // for array<>::iterator, array
