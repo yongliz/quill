@@ -28,12 +28,37 @@ struct TransitEvent
     formatted_msg.append(other.formatted_msg.begin(), other.formatted_msg.end());
   }
 
-  TransitEvent& operator=(TransitEvent other)
+  TransitEvent& operator=(TransitEvent const& other)
   {
-    std::swap(thread_context, other.thread_context);
-    std::swap(header, other.header);
-    std::swap(formatted_msg, other.formatted_msg);
-    std::swap(flush_flag, other.flush_flag);
+    if (this != &other)
+    {
+      thread_context = other.thread_context;
+      header = other.header;
+      formatted_msg.append(other.formatted_msg.begin(), other.formatted_msg.end());
+      flush_flag = other.flush_flag;
+    }
+
+    return *this;
+  }
+
+  TransitEvent(TransitEvent&& other) noexcept
+    : thread_context(other.thread_context),
+      header(other.header),
+      formatted_msg(std::move(other.formatted_msg)),
+      flush_flag(other.flush_flag)
+  {
+  }
+
+  TransitEvent& operator=(TransitEvent&& other) noexcept
+  {
+    if (this != &other)
+    {
+      thread_context = other.thread_context;
+      header = other.header;
+      formatted_msg = std::move(other.formatted_msg);
+      flush_flag = other.flush_flag;
+    }
+
     return *this;
   }
 
