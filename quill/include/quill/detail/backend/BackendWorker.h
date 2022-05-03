@@ -277,9 +277,9 @@ void BackendWorker::_read_queue_and_decode(ThreadContext* thread_context, bool i
     // |timestamp|metadata*|logger_details*|args...|
 
     auto read = spsc_queue.prepare_read();
-    std::byte const* read_buffer = read.first;
+    std::byte* read_buffer = read.first;
     size_t bytes_available = read.second;
-    std::byte const* const read_begin = read_buffer;
+    std::byte* const read_begin = read_buffer;
 
     if (bytes_available == 0)
     {
@@ -288,7 +288,7 @@ void BackendWorker::_read_queue_and_decode(ThreadContext* thread_context, bool i
     }
 
     // read the next full message
-    read_buffer = detail::align_pointer<alignof(Header), std::byte const>(read_buffer);
+    read_buffer = detail::align_pointer<alignof(Header), std::byte>(read_buffer);
     detail::Header header;
     std::memcpy(&header, read_buffer, sizeof(detail::Header));
     read_buffer += sizeof(detail::Header);

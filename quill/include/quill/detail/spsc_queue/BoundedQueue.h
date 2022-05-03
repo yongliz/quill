@@ -83,7 +83,7 @@ public:
 
       // Prevent the wrap around if it overlaps the two positions because
       // that would imply the buffer is completely empty when it's not.
-      if (consumer_pos != _storage) [[likely]]
+      if (QUILL_LIKELY(consumer_pos != _storage))
       {
         // prevents producerPos from updating before endOfRecordedSpace
         // NOTE: we want to release the value of endOfRecordedSpace to the consumer thread

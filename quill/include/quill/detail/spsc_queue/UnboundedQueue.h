@@ -97,12 +97,12 @@ public:
    * making it visible to the consumer.
    * @return a valid point to the buffer
    */
-  [[nodiscard]] [[gnu::always_inline]] [[gnu::hot]] std::byte* prepare_write(size_t nbytes)
+  QUILL_NODISCARD_ALWAYS_INLINE_HOT std::byte* prepare_write(size_t nbytes)
   {
     // Try to reserve the bounded queue
     std::byte* write_pos = _producer->bounded_queue.prepare_write(nbytes);
 
-    if (!write_pos) [[unlikely]]
+    if (QUILL_UNLIKELY(!write_pos))
     {
       // We failed to reserve because the queue was full, create a new node with the a new queue
       auto next_node = new Node{};
@@ -125,7 +125,7 @@ public:
    * Complement to reserve producer space that makes nbytes starting
    * from the return of reserve producer space visible to the consumer.
    */
-  [[gnu::always_inline]] [[gnu::hot]] void commit_write(size_t nbytes)
+  QUILL_ALWAYS_INLINE_HOT void commit_write(size_t nbytes)
   {
     _producer->bounded_queue.commit_write(nbytes);
   }
@@ -134,7 +134,7 @@ public:
    * Prepare to read from the buffer
    * @return a pair of the buffer location to read and the number of available bytes
    */
-  [[nodiscard]] [[gnu::always_inline]] [[gnu::hot]] std::pair<std::byte*, std::size_t> prepare_read()
+  QUILL_NODISCARD_ALWAYS_INLINE_HOT std::pair<std::byte*, std::size_t> prepare_read()
   {
     auto [read_pos, available_bytes] = _consumer->bounded_queue.prepare_read();
 
@@ -143,7 +143,7 @@ public:
       // the buffer is empty check if another buffer exists
       Node* const next_node = _consumer->next.load(std::memory_order_acquire);
 
-      if (next_node != nullptr) [[unlikely]]
+      if (QUILL_UNLIKELY(next_node != nullptr))
       {
         // a new buffer was added by the producer, this happens only when we have allocated a new queue
 
@@ -166,7 +166,7 @@ public:
    * Consumes the next nbytes in the buffer and frees it back
    * for the producer to reuse.
    */
-  [[gnu::always_inline]] [[gnu::hot]] void finish_read(uint64_t nbytes)
+  QUILL_ALWAYS_INLINE_HOT void finish_read(uint64_t nbytes)
   {
     _consumer->bounded_queue.finish_read(nbytes);
   }
@@ -175,7 +175,7 @@ public:
    * Return the current buffer's capacity
    * @return
    */
-  [[nodiscard]] std::size_t capacity() const noexcept
+  QUILL_NODISCARD std::size_t capacity() const noexcept
   {
     return _producer->bounded_queue.capacity();
   }
@@ -184,7 +184,7 @@ public:
    * checks if the queue is empty
    * @return
    */
-  [[nodiscard]] bool empty() const noexcept
+  QUILL_NODISCARD bool empty() const noexcept
   {
     return _consumer->bounded_queue.empty() && (_consumer->next.load(std::memory_order_relaxed) == nullptr);
   }
@@ -193,7 +193,7 @@ public:
    * Gives a pointer to producer pos
    * @return
    */
-  [[nodiscard]] [[gnu::hot]] std::byte const* producer_pos() const noexcept
+  QUILL_NODISCARD QUILL_ATTRIBUTE_HOT std::byte const* producer_pos() const noexcept
   {
     return _producer->bounded_queue.producer_pos();
   }
