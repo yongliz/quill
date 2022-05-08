@@ -7,6 +7,7 @@
 
 #include "Os.h"
 #include "Utilities.h"
+#include "quill/CompileConfig.h"
 
 namespace quill
 {
@@ -35,7 +36,7 @@ public:
    */
   value_type* allocate(std::size_t n)
   {
-    return static_cast<value_type*>(detail::aligned_alloc(CACHELINE_SIZE, n * sizeof(value_type)));
+    return static_cast<value_type*>(detail::aligned_alloc(config::CACHELINE_SIZE, n * sizeof(value_type)));
   }
 
   /**

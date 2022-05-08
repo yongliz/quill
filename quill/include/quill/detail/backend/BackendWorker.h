@@ -5,9 +5,9 @@
 
 #pragma once
 
+#include "quill/CompileConfig.h"
+#include "quill/QuillError.h" // for QUILL_CATCH, QUILL...
 #include "quill/TweakMe.h"
-
-#include "quill/QuillError.h"               // for QUILL_CATCH, QUILL...
 #include "quill/detail/Config.h"            // for Config
 #include "quill/detail/HandlerCollection.h" // for HandlerCollection
 #include "quill/detail/LoggerDetails.h"
@@ -198,11 +198,11 @@ void BackendWorker::run()
       QUILL_CATCH_ALL() { _error_handler(std::string{"Caught unhandled exception."}); }
 #endif
 
-      if constexpr (std::is_same<detail::Header::using_rdtsc, std::true_type>::value)
+      if constexpr (!config::USE_CHRONO_CLOCK)
       {
         // Use rdtsc clock based on config. The clock requires a few seconds to init as it is
         // taking samples first
-        _rdtsc_clock = std::make_unique<RdtscClock>(std::chrono::milliseconds{QUILL_RDTSC_RESYNC_INTERVAL});
+        _rdtsc_clock = std::make_unique<RdtscClock>(std::chrono::milliseconds{config::RDTSC_RESYNC_INTERVAL});
       }
 
       // Cache this thread's id
@@ -261,7 +261,7 @@ void BackendWorker::_populate_priority_queue(ThreadContextCollection::backend_th
 void BackendWorker::_read_queue_and_decode(ThreadContext* thread_context, bool is_terminating)
 {
   // Read the fast queue
-  ThreadContext::SPSCQueueT& spsc_queue = thread_context->spsc_queue();
+  SPSCQueueT& spsc_queue = thread_context->spsc_queue();
 
   while (true)
   {
@@ -406,7 +406,7 @@ void BackendWorker::_process_transit_event()
 void BackendWorker::_write_transit_event(TransitEvent const& transit_event)
 {
   std::chrono::nanoseconds timestamp;
-  if constexpr (std::is_same<detail::Header::using_rdtsc, std::true_type>::value)
+  if constexpr (!config::USE_CHRONO_CLOCK)
   {
     timestamp = _rdtsc_clock->time_since_epoch(transit_event.header.timestamp);
   }

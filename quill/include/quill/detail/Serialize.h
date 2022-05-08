@@ -6,6 +6,7 @@
 #pragma once
 
 #include "misc/Utilities.h"
+#include "quill/CompileConfig.h"
 #include "quill/LogLevel.h"
 #include "quill/MacroMetadata.h"
 #include "quill/detail/misc/Common.h"
@@ -262,7 +263,24 @@ Metadata const* get_metadata_ptr{Metadata::get<MacroMetadataFun, Args...>()};
 
 namespace detail
 {
-struct Header
+template <typename TChronoClock>
+struct HeaderDetail
+{
+};
+
+template <>
+struct HeaderDetail<std::true_type>
+{
+  uint64_t timestamp{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
+};
+
+template <>
+struct HeaderDetail<std::false_type>
+{
+  uint64_t timestamp{detail::rdtsc()};
+};
+
+struct Header : public HeaderDetail<std::conditional_t<config::USE_CHRONO_CLOCK, std::true_type, std::false_type>>
 {
 public:
   Header() = default;
@@ -271,13 +289,6 @@ public:
 
   Metadata const* metadata;
   detail::LoggerDetails const* logger_details;
-#if !defined(QUILL_CHRONO_CLOCK)
-  using using_rdtsc = std::true_type;
-  uint64_t timestamp{detail::rdtsc()};
-#else
-  using using_rdtsc = std::false_type;
-  uint64_t timestamp{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
-#endif
 };
 } // namespace detail
 } // namespace quill

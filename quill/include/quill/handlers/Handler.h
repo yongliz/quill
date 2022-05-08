@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "quill/CompileConfig.h"
 #include "quill/Fmt.h"
 #include "quill/MacroMetadata.h"
 #include "quill/PatternFormatter.h"
@@ -42,7 +43,7 @@ public:
   /**
    * Operator new to align this object to a cache line boundary as we always create it on the heap
    */
-  void* operator new(size_t i) { return detail::aligned_alloc(detail::CACHELINE_SIZE, i); }
+  void* operator new(size_t i) { return detail::aligned_alloc(config::CACHELINE_SIZE, i); }
   void operator delete(void* p) { detail::aligned_free(p); }
 
   /**
@@ -130,7 +131,7 @@ private:
   std::recursive_mutex _global_filters_lock;
 
   /** Indicator that a new filter was added **/
-  alignas(detail::CACHELINE_SIZE) std::atomic<bool> _new_filter{false};
+  alignas(config::CACHELINE_SIZE) std::atomic<bool> _new_filter{false};
 
   std::atomic<quill::LogLevel> _log_level{LogLevel::TraceL3};
 };

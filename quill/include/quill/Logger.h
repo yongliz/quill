@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "quill/CompileConfig.h"
 #include "quill/Fmt.h"
 #include "quill/LogLevel.h"
 #include "quill/QuillError.h"
@@ -32,7 +33,7 @@ class LoggerCollection;
  * Thread safe logger.
  * Logger must be obtained from LoggerCollection get_logger(), therefore constructors are private
  */
-class alignas(detail::CACHELINE_SIZE) Logger
+class alignas(config::CACHELINE_SIZE) Logger
 {
 public:
   /**
@@ -45,7 +46,7 @@ public:
    * We align the logger object to it's own cache line. It shouldn't make much difference as the
    * logger object size is exactly 1 cache line
    */
-  void* operator new(size_t i) { return detail::aligned_alloc(detail::CACHELINE_SIZE, i); }
+  void* operator new(size_t i) { return detail::aligned_alloc(config::CACHELINE_SIZE, i); }
   void operator delete(void* p) { detail::aligned_free(p); }
 
   /**
@@ -115,14 +116,25 @@ public:
     // request this size from the queue
     std::byte* write_buffer = thread_context->spsc_queue().prepare_write(total_size);
 
-#if defined(QUILL_USE_BOUNDED_QUEUE)
-    if (QUILL_UNLIKELY(write_buffer == nullptr))
+    if constexpr (!config::UNSAFE_COPY)
     {
-      // not enough space to push to queue message is dropped
-      thread_context->increment_dropped_message_counter();
-      return;
+      // not allowing unsafe copies
+      static_assert(detail::are_copyable_v<FmtArgs...>,
+                    "Trying to copy an unsafe to copy type. Tag or specialize the type as "
+                    "`copy_loggable` or explicitly format the type to string on the caller thread"
+                    "prior to logging. See "
+                    "https://github.com/odygrd/quill/wiki/8.-User-Defined-Types for more info.");
     }
-#endif
+
+    if constexpr (config::USE_BOUNDED_QUEUE)
+    {
+      if (QUILL_UNLIKELY(write_buffer == nullptr))
+      {
+        // not enough space to push to queue message is dropped
+        thread_context->increment_dropped_message_counter();
+        return;
+      }
+    }
 
     // we have enough space in this buffer, and we will write to the buffer
 
@@ -220,7 +232,7 @@ private:
 
 #if !(defined(_WIN32) && defined(_DEBUG))
 // In MSVC debug mode the class has increased size
-static_assert(sizeof(Logger) <= detail::CACHELINE_SIZE, "Logger needs to fit in 1 cache line");
+static_assert(sizeof(Logger) <= config::CACHELINE_SIZE, "Logger needs to fit in 1 cache line");
 #endif
 
 } // namespace quill

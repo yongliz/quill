@@ -65,27 +65,29 @@ void BackendWorker::_check_dropped_messages(ThreadContextCollection::backend_thr
   // silence warning when bounded queue not used
   (void)cached_thread_contexts;
 
-#if defined(QUILL_USE_BOUNDED_QUEUE)
-  for (ThreadContext* thread_context : cached_thread_contexts)
+  if constexpr (config::USE_BOUNDED_QUEUE)
   {
-    size_t const dropped_messages_cnt = thread_context->get_and_reset_message_counter();
-
-    if (QUILL_UNLIKELY(dropped_messages_cnt > 0))
+    for (ThreadContext* thread_context : cached_thread_contexts)
     {
-      char ts[24];
-      time_t t = time(nullptr);
-      struct tm p;
-      quill::detail::localtime_rs(std::addressof(t), std::addressof(p));
-      strftime(ts, 24, "%X", std::addressof(p));
+      size_t const dropped_messages_cnt = thread_context->get_and_reset_message_counter();
 
-      // Write to stderr that we dropped messages
-      std::string const msg = fmt::format("~ {} localtime dropped {} log messages from thread {}\n",
-                                          ts, dropped_messages_cnt, thread_context->thread_id());
+      if (QUILL_UNLIKELY(dropped_messages_cnt > 0))
+      {
+        char ts[24];
+        time_t t = time(nullptr);
+        struct tm p;
+        quill::detail::localtime_rs(std::addressof(t), std::addressof(p));
+        strftime(ts, 24, "%X", std::addressof(p));
 
-      detail::file_utilities::fwrite_fully(msg.data(), sizeof(char), msg.size(), stderr);
+        // Write to stderr that we dropped messages
+        std::string const msg =
+          fmt::format("~ {} localtime dropped {} log messages from thread {}\n", ts,
+                      dropped_messages_cnt, thread_context->thread_id());
+
+        detail::file_utilities::fwrite_fully(msg.data(), sizeof(char), msg.size(), stderr);
+      }
     }
   }
-#endif
 }
 
 } // namespace detail

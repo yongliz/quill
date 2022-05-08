@@ -12,6 +12,7 @@
 #include <cstring>
 #include <utility>
 
+#include "quill/CompileConfig.h"
 #include "quill/detail/misc/Attributes.h"
 #include "quill/detail/misc/Common.h"
 #include "quill/detail/misc/Os.h"
@@ -26,7 +27,7 @@ class BoundedQueue
 public:
   BoundedQueue()
   {
-    _storage = static_cast<std::byte*>(aligned_alloc(CACHELINE_SIZE, capacity()));
+    _storage = static_cast<std::byte*>(aligned_alloc(config::CACHELINE_SIZE, capacity()));
     std::memset(_storage, 0, capacity());
 
     _end_of_recorded_space = _storage + capacity();
@@ -187,13 +188,13 @@ public:
     return _consumer_pos.load(std::memory_order_relaxed) == _producer_pos.load(std::memory_order_relaxed);
   }
 
-  QUILL_NODISCARD static constexpr size_t capacity() noexcept { return QUILL_QUEUE_CAPACITY; }
+  QUILL_NODISCARD static constexpr size_t capacity() noexcept { return config::QUEUE_CAPACITY; }
 
 protected:
   std::byte* _storage{nullptr};
 
   /** Position within storage[] where the producer may place new data **/
-  alignas(CACHELINE_SIZE) std::atomic<std::byte*> _producer_pos;
+  alignas(config::CACHELINE_SIZE) std::atomic<std::byte*> _producer_pos;
 
   /**  Marks the end of valid data for the consumer. Set by the producer on a roll-over **/
   std::byte* _end_of_recorded_space;
@@ -206,7 +207,7 @@ protected:
    * Position within the storage buffer where the consumer will consume
    * the next bytes from. This value is only updated by the consumer.
    */
-  alignas(CACHELINE_SIZE) std::atomic<std::byte*> _consumer_pos;
-  char _pad0[CACHELINE_SIZE - sizeof(std::atomic<std::byte*>)] = "\0";
+  alignas(config::CACHELINE_SIZE) std::atomic<std::byte*> _consumer_pos;
+  char _pad0[config::CACHELINE_SIZE - sizeof(std::atomic<std::byte*>)] = "\0";
 };
 } // namespace quill::detail

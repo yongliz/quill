@@ -40,7 +40,7 @@ private:
   /**
    * A node has a buffer and a pointer to the next node
    */
-  struct alignas(CACHELINE_SIZE) Node
+  struct alignas(config::CACHELINE_SIZE) Node
   {
     /**
      * Constructor
@@ -53,13 +53,13 @@ private:
      * @param i
      * @return
      */
-    void* operator new(size_t i) { return aligned_alloc(CACHELINE_SIZE, i); }
+    void* operator new(size_t i) { return aligned_alloc(config::CACHELINE_SIZE, i); }
     void operator delete(void* p) { aligned_free(p); }
 
     /** members */
     bounded_queue_t bounded_queue;
-    alignas(CACHELINE_SIZE) std::atomic<Node*> next{nullptr};
-    char _pad1[CACHELINE_SIZE - sizeof(std::atomic<Node*>)] = "\0";
+    alignas(config::CACHELINE_SIZE) std::atomic<Node*> next{nullptr};
+    char _pad1[config::CACHELINE_SIZE - sizeof(std::atomic<Node*>)] = "\0";
   };
 
 public:
@@ -200,9 +200,9 @@ public:
 
 private:
   /** Modified by either the producer or consumer but never both */
-  alignas(CACHELINE_SIZE) Node* _producer{nullptr};
-  alignas(CACHELINE_SIZE) Node* _consumer{nullptr};
-  char _pad0[CACHELINE_SIZE - sizeof(Node*)] = "\0";
+  alignas(config::CACHELINE_SIZE) Node* _producer{nullptr};
+  alignas(config::CACHELINE_SIZE) Node* _consumer{nullptr};
+  char _pad0[config::CACHELINE_SIZE - sizeof(Node*)] = "\0";
 };
 
 } // namespace quill::detail

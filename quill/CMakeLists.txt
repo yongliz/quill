@@ -51,7 +51,7 @@ set(HEADER_FILES
         include/quill/PatternFormatter.h
         include/quill/Quill.h
         include/quill/QuillError.h
-        include/quill/TweakMe.h
+        include/quill/CompileConfig.h
         include/quill/Utility.h
         )
 

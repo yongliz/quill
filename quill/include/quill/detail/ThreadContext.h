@@ -5,16 +5,73 @@
 
 #pragma once
 
+#include "quill/CompileConfig.h"
 #include "quill/Fmt.h"
 #include "quill/detail/misc/Common.h"
 #include "quill/detail/misc/Os.h"
 #include "quill/detail/spsc_queue/UnboundedQueue.h"
 #include <atomic>
+#include <cassert>
 #include <cstdint>
 #include <cstdlib>
 
 namespace quill::detail
 {
+
+template <typename TQueueType>
+class ThreadContextDetail
+{
+};
+
+template <>
+class ThreadContextDetail<BoundedQueue>
+{
+public:
+  /**
+   * Increments the dropped message counter
+   */
+  void increment_dropped_message_counter() noexcept
+  {
+    _dropped_message_counter.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  /**
+   * If the message counter is greater than zero, this will return the value and reset the counter
+   * to 0. Called by the backend worker thread
+   * @return current value of the dropped message counter
+   */
+  QUILL_NODISCARD QUILL_ATTRIBUTE_HOT size_t get_and_reset_message_counter() noexcept
+  {
+    if (QUILL_LIKELY(_dropped_message_counter.load(std::memory_order_relaxed) == 0))
+    {
+      return 0;
+    }
+    return _dropped_message_counter.exchange(0, std::memory_order_relaxed);
+  }
+
+private:
+  alignas(config::CACHELINE_SIZE) std::atomic<size_t> _dropped_message_counter{0};
+  char _pad0[config::CACHELINE_SIZE - sizeof(std::atomic<size_t>)] = "\0";
+};
+
+template <>
+class ThreadContextDetail<UnboundedQueue>
+{
+public:
+  void increment_dropped_message_counter() noexcept
+  {
+    assert(false && "Not used for unbounded queue");
+  }
+
+  QUILL_NODISCARD size_t get_and_reset_message_counter() noexcept
+  {
+    assert(false && "Not used for unbounded queue");
+    return 0;
+  }
+};
+
+using SPSCQueueT = std::conditional_t<config::USE_BOUNDED_QUEUE, BoundedQueue, UnboundedQueue>;
+
 /**
  * Each thread has it's own instance of a ThreadContext class
  *
@@ -24,15 +81,9 @@ namespace quill::detail
  * The backend thread reads all existing ThreadContext class instances and pop the events
  * from each thread queue
  */
-class ThreadContext
+class ThreadContext : public ThreadContextDetail<SPSCQueueT>
 {
 public:
-#if defined(QUILL_USE_BOUNDED_QUEUE)
-  using SPSCQueueT = BoundedQueue;
-#else
-  using SPSCQueueT = UnboundedQueue;
-#endif
-
   /**
    * Constructor
    */
@@ -51,7 +102,7 @@ public:
    * @param i size of object
    * @return a pointer to the allocated object
    */
-  void* operator new(size_t i) { return aligned_alloc(CACHELINE_SIZE, i); }
+  void* operator new(size_t i) { return aligned_alloc(config::CACHELINE_SIZE, i); }
 
   /**
    * Operator delete
@@ -95,39 +146,10 @@ public:
    */
   QUILL_NODISCARD bool is_valid() const noexcept { return _valid.load(std::memory_order_relaxed); }
 
-#if defined(QUILL_USE_BOUNDED_QUEUE)
-  /**
-   * Increments the dropped message counter
-   */
-  void increment_dropped_message_counter() noexcept
-  {
-    _dropped_message_counter.fetch_add(1, std::memory_order_relaxed);
-  }
-
-  /**
-   * If the message counter is greater than zero, this will return the value and reset the counter
-   * to 0. Called by the backend worker thread
-   * @return current value of the dropped message counter
-   */
-  QUILL_NODISCARD QUILL_ATTRIBUTE_HOT size_t get_and_reset_message_counter() noexcept
-  {
-    if (QUILL_LIKELY(_dropped_message_counter.load(std::memory_order_relaxed) == 0))
-    {
-      return 0;
-    }
-    return _dropped_message_counter.exchange(0, std::memory_order_relaxed);
-  }
-#endif
-
 private:
   SPSCQueueT _spsc_queue; /** queue for this thread, events are pushed here */
   std::string _thread_id = fmt::format_int(get_thread_id()).str(); /**< cache this thread pid */
   std::string _thread_name = get_thread_name();                    /**< cache this thread name */
   std::atomic<bool> _valid{true}; /**< is this context valid, set by the caller, read by the backend worker thread */
-
-#if defined(QUILL_USE_BOUNDED_QUEUE)
-  alignas(CACHELINE_SIZE) std::atomic<size_t> _dropped_message_counter{0};
-  char _pad0[detail::CACHELINE_SIZE - sizeof(std::atomic<size_t>)] = "\0";
-#endif
 };
-} // namespace detail
+} // namespace quill::detail

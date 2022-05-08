@@ -91,6 +91,12 @@ using is_copyable_t = typename is_copyable<remove_cvref_t<T>>::type;
 template <typename T>
 constexpr bool is_copyable_v = is_copyable<remove_cvref_t<T>>::value;
 
+template<typename... Args>
+using are_copyable_t = typename std::conjunction<is_copyable<remove_cvref_t<Args>>...>;
+
+template<typename... Args>
+constexpr bool are_copyable_v = std::conjunction_v<is_copyable<remove_cvref_t<Args>>...>;
+
 /**
  * A trait to detect an object was tagged as copy_loggable
  */

@@ -13,16 +13,8 @@
 /**
  * Common type definitions etc
  */
-#if !defined(QUILL_RDTSC_RESYNC_INTERVAL)
-  #define QUILL_RDTSC_RESYNC_INTERVAL 700
-#endif
-
 #if !defined(QUILL_ACTIVE_LOG_LEVEL)
   #define QUILL_ACTIVE_LOG_LEVEL QUILL_LOG_LEVEL_TRACE_L3
-#endif
-
-#if !defined(QUILL_QUEUE_CAPACITY)
-  #define QUILL_QUEUE_CAPACITY 131'072
 #endif
 
 /**
@@ -60,11 +52,6 @@ namespace quill
 namespace detail
 {
 using FormatFnMemoryBuffer = fmt::basic_memory_buffer<char, 1024>;
-
-/**
- * Cache line size
- */
-static constexpr size_t CACHELINE_SIZE{64u};
 } // namespace detail
 
 /**
